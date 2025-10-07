@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cubes.onl - Solana Token 3D Visualizer</title>
+    <title>Cubes.onl - Live Solana Token Visualizer</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap');
         
@@ -117,6 +117,28 @@
             background-clip: text;
         }
 
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-dot.syncing {
+            background: #ffaa00;
+            animation: pulse 0.5s infinite;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -164,6 +186,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .btn:hover {
@@ -171,10 +194,37 @@
             box-shadow: 0 5px 20px rgba(0, 255, 0, 0.3);
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn.danger {
             background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(255, 51, 102, 0.2));
             border-color: rgba(255, 51, 102, 0.3);
             color: #ff3366;
+        }
+
+        /* Live Users Counter */
+        .live-users {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .live-users-count {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff00;
+        }
+
+        .live-users-label {
+            font-size: 11px;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         /* Navigation Help */
@@ -213,13 +263,40 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px 25px;
+            color: #00ff00;
+            font-size: 14px;
+            z-index: 10001;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Loading Screen -->
     <div class="loading-overlay" id="loading">
         <div class="loader"></div>
-        <div class="loading-text">Initializing Quantum Field...</div>
+        <div class="loading-text">Connecting to Database...</div>
     </div>
 
     <!-- Canvas -->
@@ -231,37 +308,45 @@
             <div class="logo">🔮</div>
             <div>
                 <div class="logo-title">CUBES.ONL</div>
-                <div style="font-size: 12px; opacity: 0.5;">Solana Token Visualizer</div>
+                <div class="sync-status">
+                    <span class="sync-dot" id="sync-dot"></span>
+                    <span id="sync-text">Connecting...</span>
+                </div>
             </div>
         </div>
         
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Wallets</div>
+                <div class="stat-label">Global Wallets</div>
                 <div class="stat-value" id="wallet-count">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Volume</div>
+                <div class="stat-label">Total Volume</div>
                 <div class="stat-value" id="volume">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Buys</div>
+                <div class="stat-label">Total Buys</div>
                 <div class="stat-value" id="buys">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Sells</div>
+                <div class="stat-label">Total Sells</div>
                 <div class="stat-value" id="sells">0</div>
             </div>
+        </div>
+        
+        <div class="live-users">
+            <div class="live-users-count" id="live-users">~</div>
+            <div class="live-users-label">Live Viewers</div>
         </div>
     </div>
     
     <!-- Controls -->
     <div class="glass-panel controls">
-        <h3 style="color: #00ff00; margin-bottom: 15px;">Simulation</h3>
-        <button class="btn" onclick="addCube('small')">Small Buy</button>
-        <button class="btn" onclick="addCube('medium')">Medium Buy</button>
-        <button class="btn" onclick="addCube('large')">Large Buy</button>
-        <button class="btn danger" onclick="removeCube()">Simulate Sell</button>
+        <h3 style="color: #00ff00; margin-bottom: 15px;">Global Controls</h3>
+        <button class="btn" onclick="addCubeToServer('small')" id="btn-small">Add Small Cube</button>
+        <button class="btn" onclick="addCubeToServer('medium')" id="btn-medium">Add Medium Cube</button>
+        <button class="btn" onclick="addCubeToServer('large')" id="btn-large">Add Large Cube</button>
+        <button class="btn danger" onclick="removeCubeFromServer()" id="btn-remove">Remove Random Cube</button>
         <button class="btn" onclick="resetView()">Reset Camera</button>
     </div>
     
@@ -277,7 +362,7 @@
     <!-- Status -->
     <div class="glass-panel status">
         <span class="status-dot"></span>
-        <span>System Online</span>
+        <span id="status-text">Initializing...</span>
     </div>
 
     <!-- Scripts -->
@@ -303,9 +388,20 @@
         let moveForward = false, moveBackward = false;
         let moveLeft = false, moveRight = false;
         let moveUp = false, moveDown = false;
+        
+        // Server connection
+        let API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api/cubes'
+            : 'https://cubes.onl/api/cubes';
+        let pollInterval;
+        let isConnected = false;
+        let lastFetch = 0;
+        let liveUserCount = 1;
 
         // Initialize everything
         function init() {
+            console.log('Initializing 3D scene...');
+            
             // Create scene
             scene = new THREE.Scene();
             scene.fog = new THREE.Fog(0x000000, 1, 100);
@@ -357,17 +453,293 @@
             // Start animation loop
             animate();
             
-            // Hide loading screen after a delay
-            setTimeout(function() {
-                document.getElementById('loading').classList.add('hidden');
+            // Connect to server and start syncing
+            connectToServer();
+        }
+
+        // Connect to server and start polling
+        async function connectToServer() {
+            console.log('Connecting to server...');
+            document.getElementById('sync-text').textContent = 'Connecting...';
+            
+            try {
+                // Initial fetch
+                await fetchCubesFromServer();
                 
-                // Add demo cubes
+                // Start polling for updates
+                pollInterval = setInterval(fetchCubesFromServer, 2000); // Poll every 2 seconds
+                
+                // Update status
+                isConnected = true;
+                document.getElementById('status-text').textContent = 'Connected to Global Server';
+                document.getElementById('sync-text').textContent = 'Live Sync Active';
+                document.getElementById('sync-dot').classList.remove('syncing');
+                
+                // Hide loading screen
                 setTimeout(function() {
-                    addCube('medium');
-                    addCube('small');
-                    addCube('large');
+                    document.getElementById('loading').classList.add('hidden');
                 }, 500);
-            }, 1500);
+                
+                // Simulate live users
+                setInterval(function() {
+                    liveUserCount = Math.max(1, liveUserCount + Math.floor(Math.random() * 3 - 1));
+                    document.getElementById('live-users').textContent = liveUserCount;
+                }, 5000);
+                
+            } catch (error) {
+                console.error('Failed to connect:', error);
+                document.getElementById('status-text').textContent = 'Connection Failed - Running Locally';
+                document.getElementById('sync-text').textContent = 'Offline Mode';
+                
+                // Hide loading and add demo cubes
+                setTimeout(function() {
+                    document.getElementById('loading').classList.add('hidden');
+                    showToast('Running in offline mode - changes won\'t sync');
+                    // Add demo cubes for offline mode
+                    createLocalCube({ id: 'demo1', size: 'medium', position: {x: 0, y: 5, z: 0} });
+                    createLocalCube({ id: 'demo2', size: 'small', position: {x: 5, y: 3, z: 5} });
+                    createLocalCube({ id: 'demo3', size: 'large', position: {x: -5, y: 7, z: -5} });
+                }, 1000);
+            }
+        }
+
+        // Fetch cubes from server
+        async function fetchCubesFromServer() {
+            if (Date.now() - lastFetch < 1000) return; // Prevent too frequent fetches
+            
+            document.getElementById('sync-dot').classList.add('syncing');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error('Server error');
+                
+                const data = await response.json();
+                
+                // Sync cubes
+                syncCubes(data.cubes || {});
+                
+                // Update stats
+                if (data.stats) {
+                    stats = data.stats;
+                    updateStats();
+                }
+                
+                lastFetch = Date.now();
+                document.getElementById('sync-dot').classList.remove('syncing');
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                if (isConnected) {
+                    showToast('Connection lost - attempting to reconnect...');
+                    isConnected = false;
+                }
+            }
+        }
+
+        // Sync local cubes with server data
+        function syncCubes(serverCubes) {
+            // Remove cubes that don't exist on server
+            cubes.forEach(function(cube, id) {
+                if (!serverCubes[id]) {
+                    removeLocalCube(id);
+                }
+            });
+            
+            // Add or update cubes from server
+            Object.values(serverCubes).forEach(function(cubeData) {
+                if (!cubes.has(cubeData.id)) {
+                    createLocalCube(cubeData);
+                }
+            });
+        }
+
+        // Add cube to server
+        async function addCubeToServer(size) {
+            if (!isConnected) {
+                showToast('Not connected to server');
+                return;
+            }
+            
+            // Disable button temporarily
+            const btn = event.target;
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'add',
+                        size: size
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to add cube');
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Cube added globally!');
+                    // Fetch latest state
+                    await fetchCubesFromServer();
+                }
+                
+            } catch (error) {
+                console.error('Add cube error:', error);
+                showToast('Failed to add cube');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Remove cube from server
+        async function removeCubeFromServer() {
+            if (!isConnected) {
+                showToast('Not connected to server');
+                return;
+            }
+            
+            const cubeIds = Array.from(cubes.keys());
+            if (cubeIds.length === 0) {
+                showToast('No cubes to remove');
+                return;
+            }
+            
+            const randomId = cubeIds[Math.floor(Math.random() * cubeIds.length)];
+            
+            // Disable button temporarily
+            const btn = event.target;
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'remove',
+                        cubeId: randomId
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to remove cube');
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Cube removed globally!');
+                    // Fetch latest state
+                    await fetchCubesFromServer();
+                }
+                
+            } catch (error) {
+                console.error('Remove cube error:', error);
+                showToast('Failed to remove cube');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Create cube locally when server updates
+        function createLocalCube(cubeData) {
+            const sizeMap = { small: 0.5, medium: 1, large: 2 };
+            const cubeSize = sizeMap[cubeData.size] || 1;
+            
+            const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x00ff00,
+                emissive: 0x00ff00,
+                emissiveIntensity: 0.2,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const cube = new THREE.Mesh(geometry, material);
+            
+            // Set position
+            if (cubeData.position) {
+                cube.position.set(cubeData.position.x, cubeData.position.y, cubeData.position.z);
+            } else {
+                cube.position.x = (Math.random() - 0.5) * 30;
+                cube.position.y = Math.random() * 10 + 1;
+                cube.position.z = (Math.random() - 0.5) * 30;
+            }
+            
+            // Set rotation
+            if (cubeData.rotation) {
+                cube.rotation.x = cubeData.rotation.x;
+                cube.rotation.y = cubeData.rotation.y;
+            }
+            
+            // Store data
+            cube.userData = {
+                id: cubeData.id,
+                size: cubeData.size,
+                velocity: {
+                    x: (Math.random() - 0.5) * 0.01,
+                    y: (Math.random() - 0.5) * 0.01,
+                    z: (Math.random() - 0.5) * 0.01
+                }
+            };
+            
+            scene.add(cube);
+            cubes.set(cubeData.id, cube);
+            
+            // Create particles
+            createParticles(cube.position, 0x00ff00);
+            
+            // Spawn animation
+            cube.scale.set(0, 0, 0);
+            animateSpawn(cube, cubeSize);
+            
+            // Change color after time
+            setTimeout(function() {
+                if (cubes.has(cubeData.id)) {
+                    cube.material.color.setHex(0x0088ff);
+                    cube.material.emissive.setHex(0x0088ff);
+                }
+            }, 5000);
+        }
+
+        // Remove cube locally
+        function removeLocalCube(cubeId) {
+            const cube = cubes.get(cubeId);
+            if (!cube) return;
+            
+            // Change color to red
+            cube.material.color.setHex(0xff0066);
+            cube.material.emissive.setHex(0xff0066);
+            
+            // Create particles
+            createParticles(cube.position, 0xff0066);
+            
+            // Remove after animation
+            setTimeout(function() {
+                scene.remove(cube);
+                cubes.delete(cubeId);
+            }, 500);
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                setTimeout(function() {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
         }
 
         // Create starfield
@@ -394,101 +766,6 @@
             
             const stars = new THREE.Points(geometry, material);
             scene.add(stars);
-        }
-
-        // Add cube function
-        function addCube(size) {
-            const sizeMap = {
-                small: 0.5,
-                medium: 1,
-                large: 2
-            };
-            
-            const cubeSize = sizeMap[size] || 1;
-            const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x00ff00,
-                emissive: 0x00ff00,
-                emissiveIntensity: 0.2,
-                transparent: true,
-                opacity: 0.9
-            });
-            
-            const cube = new THREE.Mesh(geometry, material);
-            
-            // Random position
-            cube.position.x = (Math.random() - 0.5) * 30;
-            cube.position.y = Math.random() * 10 + 1;
-            cube.position.z = (Math.random() - 0.5) * 30;
-            
-            // Random rotation
-            cube.rotation.x = Math.random() * Math.PI;
-            cube.rotation.y = Math.random() * Math.PI;
-            
-            // Store data
-            const id = 'cube_' + Date.now() + '_' + Math.random();
-            cube.userData = {
-                id: id,
-                size: size,
-                velocity: {
-                    x: (Math.random() - 0.5) * 0.01,
-                    y: (Math.random() - 0.5) * 0.01,
-                    z: (Math.random() - 0.5) * 0.01
-                }
-            };
-            
-            scene.add(cube);
-            cubes.set(id, cube);
-            
-            // Create particles
-            createParticles(cube.position, 0x00ff00);
-            
-            // Update stats
-            stats.wallets++;
-            stats.buys++;
-            stats.volume += sizeMap[size] * 100;
-            updateStats();
-            
-            // Spawn animation
-            cube.scale.set(0, 0, 0);
-            animateSpawn(cube, cubeSize);
-            
-            // Change color after 3 seconds
-            setTimeout(function() {
-                if (cubes.has(id)) {
-                    cube.material.color.setHex(0x0088ff);
-                    cube.material.emissive.setHex(0x0088ff);
-                }
-            }, 3000);
-        }
-
-        // Remove cube function
-        function removeCube() {
-            if (cubes.size === 0) return;
-            
-            const keys = Array.from(cubes.keys());
-            const randomKey = keys[Math.floor(Math.random() * keys.length)];
-            const cube = cubes.get(randomKey);
-            
-            if (cube) {
-                // Change color to red
-                cube.material.color.setHex(0xff0066);
-                cube.material.emissive.setHex(0xff0066);
-                
-                // Create particles
-                createParticles(cube.position, 0xff0066);
-                
-                // Update stats
-                stats.wallets--;
-                stats.sells++;
-                updateStats();
-                
-                // Remove after animation
-                setTimeout(function() {
-                    scene.remove(cube);
-                    cubes.delete(randomKey);
-                }, 500);
-            }
         }
 
         // Create particle effect
@@ -551,10 +828,10 @@
 
         // Update stats display
         function updateStats() {
-            document.getElementById('wallet-count').textContent = stats.wallets;
-            document.getElementById('volume').textContent = stats.volume;
-            document.getElementById('buys').textContent = stats.buys;
-            document.getElementById('sells').textContent = stats.sells;
+            document.getElementById('wallet-count').textContent = stats.wallets || 0;
+            document.getElementById('volume').textContent = stats.volume || 0;
+            document.getElementById('buys').textContent = stats.buys || 0;
+            document.getElementById('sells').textContent = stats.sells || 0;
         }
 
         // Setup event listeners
