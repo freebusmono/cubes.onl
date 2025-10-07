@@ -910,8 +910,8 @@
             <div class="stat-value" id="stat-volume">0</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Price</div>
-            <div class="stat-value" id="stat-price">$0.00</div>
+            <div class="stat-label">FPS</div>
+            <div class="stat-value" id="stat-fps">60</div>
         </div>
     </div>
     
@@ -1017,14 +1017,51 @@
         // Touch controls
         let touchStartX = 0, touchStartY = 0;
         
+        // Frame timing for smooth animations
+        let lastFrameTime = Date.now();
+        let deltaTime = 0;
+        
+        // FPS tracking
+        const stats = {
+            fps: 0,
+            frameCount: 0,
+            lastTime: performance.now()
+        };
+        
+        // Shared materials for better performance
+        const cubeMaterials = {
+            dark: {
+                small: null,
+                medium: null,
+                large: null
+            },
+            light: {
+                small: null,
+                medium: null,
+                large: null
+            }
+        };
+        
+        function initializeMaterials() {
+            ['dark', 'light'].forEach(mode => {
+                ['small', 'medium', 'large'].forEach(size => {
+                    cubeMaterials[mode][size] = new THREE.MeshPhongMaterial({
+                        color: mode === 'dark' ? 0x00ff88 : 0x00cc66,
+                        emissive: mode === 'dark' ? 0x00ff88 : 0x00cc66,
+                        emissiveIntensity: 0.1,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                });
+            });
+        }
+        
         // Mobile movement functions
         function startMove(direction) {
             if (!isMobile) return;
             
-            // Reset all movements
             moveForward = moveBackward = moveLeft = moveRight = false;
             
-            // Set movement based on direction
             switch(direction) {
                 case 'forward':
                     moveForward = true;
@@ -1063,22 +1100,21 @@
 
         // Initialize
         function init() {
+            initializeMaterials();
             setupScene();
             setupEventListeners();
             animate();
             loadCubes();
+            updateFPS();
             
-            // Hide loading after scene is ready
             setTimeout(() => {
                 document.getElementById('loading').classList.add('hidden');
             }, 1500);
         }
 
         function setupScene() {
-            // Scene
             scene = new THREE.Scene();
             
-            // Camera
             camera = new THREE.PerspectiveCamera(
                 75,
                 window.innerWidth / window.innerHeight,
@@ -1087,14 +1123,16 @@
             );
             camera.position.set(0, 8, 20);
             
-            // Renderer
+            // Optimized renderer
             renderer = new THREE.WebGLRenderer({
                 canvas: document.getElementById('canvas'),
-                antialias: true,
-                alpha: true
+                antialias: false,
+                alpha: false,
+                powerPreference: "high-performance"
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            renderer.shadowMap.enabled = false;
             
             updateSceneTheme();
             
@@ -1120,7 +1158,7 @@
             gridHelper.material.transparent = true;
             scene.add(gridHelper);
             
-            // Particles background
+            // Optimized particles
             createParticleField();
         }
 
@@ -1129,11 +1167,12 @@
             const vertices = [];
             const colors = [];
             
-            for (let i = 0; i < 5000; i++) {
+            // Reduced particle count
+            for (let i = 0; i < 1500; i++) {
                 vertices.push(
-                    (Math.random() - 0.5) * 500,
-                    (Math.random() - 0.5) * 500,
-                    (Math.random() - 0.5) * 500
+                    (Math.random() - 0.5) * 300,
+                    (Math.random() - 0.5) * 300,
+                    (Math.random() - 0.5) * 300
                 );
                 
                 const color = new THREE.Color();
@@ -1145,15 +1184,17 @@
             geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
             
             const material = new THREE.PointsMaterial({
-                size: 2,
+                size: 1.5,
                 vertexColors: true,
                 transparent: true,
-                opacity: isDarkMode ? 0.6 : 0.3,
-                blending: THREE.AdditiveBlending
+                opacity: isDarkMode ? 0.4 : 0.2,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: false
             });
             
             const particleField = new THREE.Points(geometry, material);
             particleField.name = 'particleField';
+            particleField.frustumCulled = true;
             scene.add(particleField);
         }
 
@@ -1171,59 +1212,31 @@
                 const response = await fetch(API_URL);
                 const data = await response.json();
                 
-                // Sync cubes
                 Object.values(data.cubes || {}).forEach(cubeData => {
                     if (!cubes.has(cubeData.id)) {
                         createCube(cubeData);
                     }
                 });
                 
-                // Update stats
                 if (data.stats) {
                     document.getElementById('stat-holders').textContent = data.stats.wallets || 0;
                     document.getElementById('stat-volume').textContent = data.stats.volume || 0;
                 }
                 
-                // Poll for updates
-                setTimeout(loadCubes, 3000);
+                setTimeout(loadCubes, 5000);
             } catch (error) {
                 console.error('Failed to load cubes:', error);
-                setTimeout(loadCubes, 5000);
+                setTimeout(loadCubes, 10000);
             }
         }
 
         function createCube(cubeData) {
             const size = cubeData.size === 'small' ? 0.7 : cubeData.size === 'large' ? 1.5 : 1;
+            const sizeCategory = cubeData.size || 'medium';
             
-            // Create more sophisticated geometry with beveled edges
-            const geometry = new THREE.BoxGeometry(size, size, size, 2, 2, 2);
+            const geometry = new THREE.BoxGeometry(size, size, size);
             
-            // Modify vertices for a more interesting shape
-            const positionAttribute = geometry.attributes.position;
-            for (let i = 0; i < positionAttribute.count; i++) {
-                const x = positionAttribute.getX(i);
-                const y = positionAttribute.getY(i);
-                const z = positionAttribute.getZ(i);
-                
-                // Add subtle deformation for more organic feel
-                const noise = Math.random() * 0.02;
-                positionAttribute.setXYZ(i, x * (1 + noise), y * (1 + noise), z * (1 + noise));
-            }
-            geometry.computeVertexNormals();
-            
-            // Create material with better shading
-            const material = new THREE.MeshPhysicalMaterial({
-                color: isDarkMode ? 0x00ff88 : 0x00cc66,
-                emissive: isDarkMode ? 0x00ff88 : 0x00cc66,
-                emissiveIntensity: 0.1,
-                metalness: 0.4,
-                roughness: 0.3,
-                clearcoat: 1.0,
-                clearcoatRoughness: 0.1,
-                transparent: true,
-                opacity: 0.95,
-                side: THREE.DoubleSide
-            });
+            const material = cubeMaterials[isDarkMode ? 'dark' : 'light'][sizeCategory];
             
             const cube = new THREE.Mesh(geometry, material);
             cube.position.set(
@@ -1232,44 +1245,19 @@
                 cubeData.position.z
             );
             
-            // Add cube-shaped glow (offset cube instead of icosahedron)
-            const glowSize = size * 1.15; // Slightly larger than the main cube
+            // Single optimized glow layer
+            const glowSize = size * 1.2;
             const glowGeometry = new THREE.BoxGeometry(glowSize, glowSize, glowSize);
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: isDarkMode ? 0x00ff88 : 0x00cc66,
                 transparent: true,
-                opacity: 0.2,
-                side: THREE.BackSide
+                opacity: 0.15,
+                side: THREE.BackSide,
+                depthWrite: false
             });
-            const innerGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-            cube.add(innerGlow);
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            cube.add(glow);
             
-            // Add second layer for stronger glow effect
-            const outerGlowSize = size * 1.3;
-            const outerGlowGeometry = new THREE.BoxGeometry(outerGlowSize, outerGlowSize, outerGlowSize);
-            const outerGlowMaterial = new THREE.MeshBasicMaterial({
-                color: isDarkMode ? 0x00ff88 : 0x00cc66,
-                transparent: true,
-                opacity: 0.1,
-                side: THREE.BackSide
-            });
-            const outerGlow = new THREE.Mesh(outerGlowGeometry, outerGlowMaterial);
-            cube.add(outerGlow);
-            
-            // Add wireframe for tech feel
-            const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(
-                edges,
-                new THREE.LineBasicMaterial({ 
-                    color: isDarkMode ? 0xffffff : 0x000000,
-                    transparent: true,
-                    opacity: 0.1,
-                    linewidth: 1
-                })
-            );
-            cube.add(line);
-            
-            // Store extended data
             cube.userData = {
                 ...cubeData,
                 wallet: cubeData.wallet_address || `0x${Math.random().toString(16).substr(2, 40)}`,
@@ -1279,24 +1267,20 @@
                 createdAt: cubeData.created_at || new Date().toISOString()
             };
             
+            cube.frustumCulled = true;
+            
             scene.add(cube);
             cubes.set(cubeData.id, cube);
             
-            // Spawn animation with rotation
+            // Fast spawn animation
             cube.scale.set(0, 0, 0);
-            cube.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-            
-            const targetScale = 1;
             const startTime = Date.now();
             
             function animateSpawn() {
                 const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / 800, 1);
-                const eased = 1 - Math.pow(1 - progress, 4);
+                const progress = Math.min(elapsed / 500, 1);
                 
-                cube.scale.set(eased, eased, eased);
-                cube.rotation.x += (1 - eased) * 0.05;
-                cube.rotation.y += (1 - eased) * 0.05;
+                cube.scale.setScalar(progress);
                 
                 if (progress < 1) {
                     requestAnimationFrame(animateSpawn);
@@ -1315,12 +1299,15 @@
             document.body.classList.toggle('light-mode');
             updateSceneTheme();
             
+            // Update materials
+            initializeMaterials();
+            
             // Update existing cubes
             cubes.forEach(cube => {
-                cube.material.color.setHex(isDarkMode ? 0x00ff88 : 0x00cc66);
-                cube.material.emissive.setHex(isDarkMode ? 0x00ff88 : 0x00cc66);
+                const sizeCategory = cube.userData.size || 'medium';
+                cube.material = cubeMaterials[isDarkMode ? 'dark' : 'light'][sizeCategory];
                 
-                // Update glow layers
+                // Update glow
                 cube.children.forEach(child => {
                     if (child.material && child.material.type === 'MeshBasicMaterial') {
                         child.material.color.setHex(isDarkMode ? 0x00ff88 : 0x00cc66);
@@ -1331,7 +1318,7 @@
             // Update particle field
             const particleField = scene.getObjectByName('particleField');
             if (particleField) {
-                particleField.material.opacity = isDarkMode ? 0.6 : 0.3;
+                particleField.material.opacity = isDarkMode ? 0.4 : 0.2;
             }
         }
 
@@ -1343,7 +1330,6 @@
                 return;
             }
             
-            // Simulate wallet connection
             walletConnected = true;
             btn.textContent = '0x1a2b...3c4d';
             document.getElementById('trade-panel').classList.add('active');
@@ -1374,7 +1360,6 @@
         }
 
         function simulateActivity() {
-            // Add random cube
             fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1392,7 +1377,6 @@
             visualMode = modes[(currentIndex + 1) % modes.length];
             showToast(`Visual mode: ${visualMode}`);
             
-            // Rearrange cubes
             let index = 0;
             cubes.forEach(cube => {
                 const targetPos = getPositionForMode(visualMode, index++);
@@ -1493,7 +1477,6 @@
                     cube.material.emissive.setHex(0xff00ff);
                     cube.material.emissiveIntensity = 0.5;
                     
-                    // Move camera to cube
                     const targetPos = cube.position.clone();
                     targetPos.z += 10;
                     targetPos.y += 5;
@@ -1506,22 +1489,18 @@
         });
 
         function setupEventListeners() {
-            // Check if mobile
             isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
             
             if (isMobile) {
                 document.getElementById('mobile-controls').style.display = 'block';
             }
             
-            // Raycaster for cube clicking
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
             
-            // Mouse/Touch click for cube selection
             function onPointerDown(event) {
                 event.preventDefault();
                 
-                // Calculate mouse position
                 let clientX, clientY;
                 if (event.type === 'mousedown') {
                     clientX = event.clientX;
@@ -1534,10 +1513,8 @@
                 mouse.x = (clientX / window.innerWidth) * 2 - 1;
                 mouse.y = -(clientY / window.innerHeight) * 2 + 1;
                 
-                // Update raycaster
                 raycaster.setFromCamera(mouse, camera);
                 
-                // Check for intersections with cubes
                 const intersects = raycaster.intersectObjects(Array.from(cubes.values()));
                 
                 if (intersects.length > 0) {
@@ -1546,11 +1523,9 @@
                 }
             }
             
-            // Add click/touch listeners for cube selection
             renderer.domElement.addEventListener('mousedown', onPointerDown);
             renderer.domElement.addEventListener('touchstart', onPointerDown);
             
-            // Mouse controls (desktop)
             if (!isMobile) {
                 let isDragging = false;
                 let dragStartX = 0;
@@ -1568,7 +1543,6 @@
                 });
                 
                 document.addEventListener('mouseup', (e) => {
-                    // Only trigger click if not dragging
                     if (e.target.id === 'canvas' && !isDragging) {
                         onPointerDown(e);
                     }
@@ -1580,7 +1554,6 @@
                         const deltaX = e.clientX - mouseX;
                         const deltaY = e.clientY - mouseY;
                         
-                        // Check if user is dragging
                         if (Math.abs(e.clientX - dragStartX) > 5 || Math.abs(e.clientY - dragStartY) > 5) {
                             isDragging = true;
                         }
@@ -1595,7 +1568,6 @@
                 });
             }
             
-            // Touch controls for camera (mobile)
             let touchStarted = false;
             let lastTouchX = 0;
             let lastTouchY = 0;
@@ -1629,7 +1601,6 @@
             }, { passive: false });
             
             document.addEventListener('touchend', (e) => {
-                // Only trigger cube click if touch didn't move
                 if (touchStarted && !touchMoved && e.target.id === 'canvas') {
                     const touch = e.changedTouches[0];
                     const mockEvent = {
@@ -1642,7 +1613,6 @@
                 touchStarted = false;
             }, { passive: true });
             
-            // Keyboard (desktop only)
             if (!isMobile) {
                 document.addEventListener('keydown', (e) => {
                     switch(e.key.toLowerCase()) {
@@ -1667,7 +1637,6 @@
                 });
             }
             
-            // Window resize
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
@@ -1680,7 +1649,6 @@
                 }
             });
             
-            // Prevent iOS bounce and zoom
             if (isMobile) {
                 document.body.addEventListener('touchmove', (e) => {
                     if (e.target.id === 'canvas') {
@@ -1699,12 +1667,10 @@
             }
         }
         
-        // Cube details functions
         function openCubeDetails(cube) {
             const details = document.getElementById('cube-details');
             const data = cube.userData;
             
-            // Populate details
             document.getElementById('detail-wallet').textContent = 
                 data.wallet ? `${data.wallet.slice(0, 6)}...${data.wallet.slice(-4)}` : 'Unknown';
             document.getElementById('detail-wallet').setAttribute('data-full', data.wallet || '');
@@ -1715,7 +1681,7 @@
             document.getElementById('detail-holdings').textContent = 
                 (data.holdings || Math.floor(Math.random() * 10000)).toLocaleString() + ' TOKENS';
             
-            const tokenPrice = 0.0025; // Example price
+            const tokenPrice = 0.0025;
             const usdValue = (data.holdings || 1000) * tokenPrice;
             document.getElementById('detail-value').textContent = 
                 '$' + usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1724,18 +1690,15 @@
             document.getElementById('detail-since').textContent = 
                 createdDate.toLocaleDateString();
             
-            // Highlight the selected cube
             cube.material.emissive.setHex(0xff00ff);
             cube.material.emissiveIntensity = 0.5;
             
-            // Show panel
             details.classList.add('active');
         }
         
         function closeCubeDetails() {
             document.getElementById('cube-details').classList.remove('active');
             
-            // Remove highlight from all cubes
             cubes.forEach(cube => {
                 cube.material.emissive.setHex(isDarkMode ? 0x00ff88 : 0x00cc66);
                 cube.material.emissiveIntensity = 0.1;
@@ -1753,7 +1716,21 @@
             }
         }
         
-        // Global functions for mobile
+        // FPS counter
+        function updateFPS() {
+            stats.frameCount++;
+            const now = performance.now();
+            if (now >= stats.lastTime + 1000) {
+                stats.fps = Math.round((stats.frameCount * 1000) / (now - stats.lastTime));
+                stats.frameCount = 0;
+                stats.lastTime = now;
+                
+                document.getElementById('stat-fps').textContent = stats.fps;
+            }
+            requestAnimationFrame(updateFPS);
+        }
+        
+        // Global functions
         window.startMove = startMove;
         window.stopMove = stopMove;
         window.closeCubeDetails = closeCubeDetails;
@@ -1769,16 +1746,20 @@
         window.resetView = resetView;
         window.showInfo = showInfo;
 
+        // Optimized animation loop
         function animate() {
             requestAnimationFrame(animate);
             
-            // Camera rotation
+            const currentTime = Date.now();
+            deltaTime = (currentTime - lastFrameTime) / 1000;
+            lastFrameTime = currentTime;
+            deltaTime = Math.min(deltaTime, 0.1);
+            
             camera.rotation.order = 'YXZ';
             camera.rotation.y = cameraRotationY;
             camera.rotation.x = cameraRotationX;
             
-            // Movement
-            const moveSpeed = 0.3;
+            const moveSpeed = 15 * deltaTime;
             const forward = new THREE.Vector3(0, 0, -1);
             const right = new THREE.Vector3(1, 0, 0);
             
@@ -1798,14 +1779,25 @@
             
             camera.position.y = Math.max(0.5, camera.position.y);
             
-            // Animate cubes
-            const time = Date.now() * 0.001;
+            // Optimized cube animation with frustum culling
+            const time = currentTime * 0.001;
+            const frustum = new THREE.Frustum();
+            const matrix = new THREE.Matrix4().multiplyMatrices(
+                camera.projectionMatrix,
+                camera.matrixWorldInverse
+            );
+            frustum.setFromProjectionMatrix(matrix);
+            
             cubes.forEach(cube => {
-                cube.rotation.x += 0.005;
-                cube.rotation.y += 0.005;
-                
-                // Floating effect
-                cube.position.y += Math.sin(time + cube.userData.id.charCodeAt(0)) * 0.002;
+                // Only animate if cube is in view
+                if (frustum.intersectsObject(cube)) {
+                    cube.rotation.x += 0.3 * deltaTime;
+                    cube.rotation.y += 0.3 * deltaTime;
+                    
+                    // Slower, smoother floating
+                    const floatOffset = Math.sin(time * 0.5 + cube.userData.id.charCodeAt(0) * 0.1) * 0.1 * deltaTime;
+                    cube.position.y += floatOffset;
+                }
             });
             
             renderer.render(scene, camera);
