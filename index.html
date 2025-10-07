@@ -526,19 +526,200 @@
             z-index: 997;
         }
 
-        /* Responsive */
+        /* Mobile Optimizations */
         @media (max-width: 768px) {
+            /* Adjust orb menu for mobile */
+            .orb-menu {
+                top: 20px;
+                left: 20px;
+            }
+            
+            .main-orb {
+                width: 50px;
+                height: 50px;
+            }
+            
+            /* Search bar mobile */
+            .search-container {
+                top: 20px;
+                width: calc(100% - 160px);
+                left: 80px;
+                transform: none;
+            }
+            
+            .search-wrapper {
+                border-radius: 25px;
+            }
+            
+            .search-input {
+                padding: 12px 40px 12px 15px;
+                font-size: 14px;
+            }
+            
+            /* Wallet button mobile */
+            .wallet-container {
+                top: 20px;
+                right: 20px;
+            }
+            
+            .wallet-btn {
+                padding: 12px 20px;
+                font-size: 12px;
+            }
+            
+            /* Stats cards mobile - horizontal scroll */
             .stats-container {
-                flex-direction: column;
-                gap: 10px;
+                bottom: 80px;
+                left: 20px;
+                right: 20px;
+                flex-direction: row;
+                gap: 15px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 10px;
+            }
+            
+            .stats-container::-webkit-scrollbar {
+                height: 4px;
+            }
+            
+            .stats-container::-webkit-scrollbar-track {
+                background: var(--bg-panel);
+                border-radius: 2px;
+            }
+            
+            .stats-container::-webkit-scrollbar-thumb {
+                background: var(--primary);
+                border-radius: 2px;
             }
             
             .stat-card {
-                min-width: 200px;
+                min-width: 120px;
+                padding: 15px;
+                flex-shrink: 0;
+            }
+            
+            .stat-label {
+                font-size: 10px;
+            }
+            
+            .stat-value {
+                font-size: 22px;
+            }
+            
+            /* Theme toggle mobile */
+            .theme-toggle {
+                bottom: 30px;
+                right: 20px;
+                width: 50px;
+                height: 26px;
+            }
+            
+            .theme-toggle-slider {
+                width: 20px;
+                height: 20px;
+                top: 3px;
+            }
+            
+            body.light-mode .theme-toggle-slider {
+                transform: translateX(24px);
+            }
+            
+            /* Trade panel mobile */
+            .trade-panel {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 30px 30px 0 0;
+                padding: 25px 20px 30px;
+            }
+            
+            /* Navigation hint mobile */
+            .nav-hint {
+                display: none;
+            }
+            
+            /* Mobile controls overlay */
+            .mobile-controls {
+                display: block;
+            }
+        }
+        
+        /* Touch controls for mobile */
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 998;
+        }
+        
+        .mobile-joystick {
+            width: 120px;
+            height: 120px;
+            background: var(--bg-panel);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+        }
+        
+        .joystick-handle {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: none;
+        }
+        
+        /* Portrait orientation specific */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .stats-container {
+                bottom: 100px;
+            }
+            
+            .mobile-controls {
+                bottom: 15px;
+            }
+        }
+        
+        /* Landscape orientation specific */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .orb-menu {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .main-orb {
+                width: 40px;
+                height: 40px;
             }
             
             .search-container {
-                width: 90%;
+                display: none;
+            }
+            
+            .wallet-container {
+                top: 10px;
+            }
+            
+            .stats-container {
+                bottom: 10px;
+                left: 10px;
+            }
+            
+            .stat-card {
+                min-width: 100px;
+                padding: 10px;
+            }
+            
+            .stat-value {
+                font-size: 18px;
             }
         }
     </style>
