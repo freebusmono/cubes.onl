@@ -9,13 +9,13 @@
     "test": "echo \"No tests configured\"",
     "deploy": "vercel --prod"
   },
- "dependencies": {
-  "@neondatabase/serverless": "^0.6.0"
-}
+  "dependencies": {
+    "@vercel/kv": "^1.0.0",
+    "@neondatabase/serverless": "^0.6.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_USERNAME/cubes.onl.git"
+    "url": "git+https://github.com/freebusmono/cubes.onl.git"
   },
   "keywords": [
     "solana",
@@ -25,12 +25,14 @@
     "3d",
     "blockchain",
     "defi",
-    "crypto"
+    "crypto",
+    "neon",
+    "postgres"
   ],
-  "author": "YOUR_NAME",
+  "author": "freebusmono",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/cubes.onl/issues"
+    "url": "https://github.com/freebusmono/cubes.onl/issues"
   },
   "homepage": "https://cubes.onl"
 }
