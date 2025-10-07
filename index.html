@@ -834,29 +834,46 @@
 
         // Initialize
         async function init() {
-            // Setup Three.js
-            setupScene();
-            setupLighting();
-            setupPostProcessing();
-            setupEventListeners();
-            
-            // Initialize audio
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Start animation
-            animate();
-            
-            // Hide loading after scene is ready
-            setTimeout(() => {
-                document.getElementById('loading').classList.add('hidden');
+            try {
+                // Setup Three.js
+                setupScene();
+                setupLighting();
+                setupPostProcessing();
+                setupEventListeners();
                 
-                // Add some demo cubes
+                // Initialize audio with user interaction fallback
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Audio context will initialize on first user interaction');
+                }
+                
+                // Start animation
+                animate();
+                
+                // Hide loading after scene is ready
                 setTimeout(() => {
-                    simulateBuy('medium');
-                    simulateBuy('small');
-                    simulateBuy('large');
-                }, 1000);
-            }, 2000);
+                    const loadingElement = document.getElementById('loading');
+                    if (loadingElement) {
+                        loadingElement.classList.add('hidden');
+                    }
+                    
+                    // Add some demo cubes
+                    setTimeout(() => {
+                        simulateBuy('medium');
+                        simulateBuy('small');
+                        simulateBuy('large');
+                    }, 1000);
+                }, 1500);
+            } catch (error) {
+                console.error('Initialization error:', error);
+                // Hide loading screen even if there's an error
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    loadingElement.classList.add('hidden');
+                }
+                alert('There was an error initializing the 3D scene. Please refresh the page.');
+            }
         }
 
         function setupScene() {
