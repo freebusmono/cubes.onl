@@ -1,3 +1,6 @@
+Here's the complete, working index.html file:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -490,6 +493,107 @@
             box-shadow: 0 10px 30px rgba(0, 255, 136, 0.4);
         }
 
+        /* Cube Details Panel */
+        .cube-details {
+            position: fixed;
+            top: 50%;
+            right: -400px;
+            transform: translateY(-50%);
+            width: 350px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 25px;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1002;
+        }
+
+        .cube-details.active {
+            right: 40px;
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .details-title {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .close-details {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--border);
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .close-details:hover {
+            background: var(--primary);
+            color: var(--bg-main);
+        }
+
+        .detail-row {
+            margin-bottom: 18px;
+        }
+
+        .detail-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.6;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .wallet-address {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .copy-btn {
+            padding: 4px 12px;
+            background: var(--border);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: var(--bg-main);
+        }
+
         /* Toast */
         .toast {
             position: fixed;
@@ -528,7 +632,6 @@
 
         /* Mobile Optimizations */
         @media (max-width: 768px) {
-            /* Adjust orb menu for mobile */
             .orb-menu {
                 top: 20px;
                 left: 20px;
@@ -539,7 +642,6 @@
                 height: 50px;
             }
             
-            /* Search bar mobile */
             .search-container {
                 top: 20px;
                 width: calc(100% - 160px);
@@ -556,7 +658,6 @@
                 font-size: 14px;
             }
             
-            /* Wallet button mobile */
             .wallet-container {
                 top: 20px;
                 right: 20px;
@@ -567,7 +668,6 @@
                 font-size: 12px;
             }
             
-            /* Stats cards mobile - horizontal scroll */
             .stats-container {
                 bottom: 80px;
                 left: 20px;
@@ -608,7 +708,6 @@
                 font-size: 22px;
             }
             
-            /* Theme toggle mobile */
             .theme-toggle {
                 bottom: 30px;
                 right: 20px;
@@ -626,7 +725,6 @@
                 transform: translateX(24px);
             }
             
-            /* Trade panel mobile */
             .trade-panel {
                 width: 100%;
                 max-width: 100%;
@@ -634,18 +732,28 @@
                 padding: 25px 20px 30px;
             }
             
-            /* Navigation hint mobile */
             .nav-hint {
                 display: none;
             }
             
-            /* Mobile controls overlay */
             .mobile-controls {
                 display: block;
             }
+
+            .cube-details {
+                right: -100%;
+                width: calc(100% - 40px);
+                max-width: 350px;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            
+            .cube-details.active {
+                right: auto;
+            }
         }
         
-        /* Mobile controls - simplified */
+        /* Mobile controls */
         .mobile-controls {
             display: none;
             position: fixed;
@@ -699,7 +807,6 @@
             pointer-events: none;
         }
         
-        /* Portrait orientation specific */
         @media (max-width: 768px) and (orientation: portrait) {
             .stats-container {
                 bottom: 100px;
@@ -710,7 +817,6 @@
             }
         }
         
-        /* Landscape orientation specific */
         @media (max-width: 768px) and (orientation: landscape) {
             .orb-menu {
                 top: 10px;
@@ -1595,55 +1701,7 @@
             const tokenPrice = 0.0025; // Example price
             const usdValue = (data.holdings || 1000) * tokenPrice;
             document.getElementById('detail-value').textContent = 
-                '
-
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Camera rotation
-            camera.rotation.order = 'YXZ';
-            camera.rotation.y = cameraRotationY;
-            camera.rotation.x = cameraRotationX;
-            
-            // Movement
-            const moveSpeed = 0.3;
-            const forward = new THREE.Vector3(0, 0, -1);
-            const right = new THREE.Vector3(1, 0, 0);
-            
-            forward.applyQuaternion(camera.quaternion);
-            right.applyQuaternion(camera.quaternion);
-            forward.y = 0;
-            right.y = 0;
-            forward.normalize();
-            right.normalize();
-            
-            if (moveForward) camera.position.addScaledVector(forward, moveSpeed);
-            if (moveBackward) camera.position.addScaledVector(forward, -moveSpeed);
-            if (moveLeft) camera.position.addScaledVector(right, -moveSpeed);
-            if (moveRight) camera.position.addScaledVector(right, moveSpeed);
-            if (moveUp) camera.position.y += moveSpeed;
-            if (moveDown) camera.position.y -= moveSpeed;
-            
-            camera.position.y = Math.max(0.5, camera.position.y);
-            
-            // Animate cubes
-            const time = Date.now() * 0.001;
-            cubes.forEach(cube => {
-                cube.rotation.x += 0.005;
-                cube.rotation.y += 0.005;
-                
-                // Floating effect
-                cube.position.y += Math.sin(time + cube.userData.id.charCodeAt(0)) * 0.002;
-            });
-            
-            renderer.render(scene, camera);
-        }
-
-        // Initialize
-        window.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
-</html> + usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                '$' + usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             
             const createdDate = data.createdAt ? new Date(data.createdAt) : new Date();
             document.getElementById('detail-since').textContent = 
@@ -1679,49 +1737,20 @@
         }
         
         // Global functions for mobile
-        window.startMove = function(direction) {
-            if (!isMobile) return;
-            
-            moveForward = moveBackward = moveLeft = moveRight = false;
-            
-            switch(direction) {
-                case 'forward':
-                    moveForward = true;
-                    break;
-                case 'backward':
-                    moveBackward = true;
-                    break;
-                case 'left':
-                    moveLeft = true;
-                    break;
-                case 'right':
-                    moveRight = true;
-                    break;
-                case 'forward-left':
-                    moveForward = true;
-                    moveLeft = true;
-                    break;
-                case 'forward-right':
-                    moveForward = true;
-                    moveRight = true;
-                    break;
-                case 'backward-left':
-                    moveBackward = true;
-                    moveLeft = true;
-                    break;
-                case 'backward-right':
-                    moveBackward = true;
-                    moveRight = true;
-                    break;
-            }
-        }
-        
-        window.stopMove = function() {
-            moveForward = moveBackward = moveLeft = moveRight = moveUp = moveDown = false;
-        }
-        
+        window.startMove = startMove;
+        window.stopMove = stopMove;
         window.closeCubeDetails = closeCubeDetails;
         window.copyAddress = copyAddress;
+        window.toggleMenu = toggleMenu;
+        window.toggleTheme = toggleTheme;
+        window.connectWallet = connectWallet;
+        window.closeTrade = closeTrade;
+        window.setTradeTab = setTradeTab;
+        window.executeTrade = executeTrade;
+        window.simulateActivity = simulateActivity;
+        window.changeVisualMode = changeVisualMode;
+        window.resetView = resetView;
+        window.showInfo = showInfo;
 
         function animate() {
             requestAnimationFrame(animate);
