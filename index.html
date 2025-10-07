@@ -833,8 +833,49 @@
     
     <!-- Mobile Controls -->
     <div class="mobile-controls" id="mobile-controls">
-        <div class="mobile-joystick" id="joystick">
-            <div class="joystick-handle" id="joystick-handle"></div>
+        <div class="mobile-control-buttons">
+            <div class="move-controls">
+                <button class="move-btn" ontouchstart="startMove('forward-left')" ontouchend="stopMove()">↖</button>
+                <button class="move-btn" ontouchstart="startMove('forward')" ontouchend="stopMove()">↑</button>
+                <button class="move-btn" ontouchstart="startMove('forward-right')" ontouchend="stopMove()">↗</button>
+                <button class="move-btn" ontouchstart="startMove('left')" ontouchend="stopMove()">←</button>
+                <button class="move-btn center"></button>
+                <button class="move-btn" ontouchstart="startMove('right')" ontouchend="stopMove()">→</button>
+                <button class="move-btn" ontouchstart="startMove('backward-left')" ontouchend="stopMove()">↙</button>
+                <button class="move-btn" ontouchstart="startMove('backward')" ontouchend="stopMove()">↓</button>
+                <button class="move-btn" ontouchstart="startMove('backward-right')" ontouchend="stopMove()">↘</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cube Details Panel -->
+    <div class="cube-details" id="cube-details">
+        <div class="details-header">
+            <div class="details-title">Cube Details</div>
+            <button class="close-details" onclick="closeCubeDetails()">✕</button>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Wallet Address</span>
+            <div class="wallet-address">
+                <span class="detail-value" id="detail-wallet">-</span>
+                <button class="copy-btn" onclick="copyAddress()">Copy</button>
+            </div>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Size Category</span>
+            <span class="detail-value" id="detail-size">-</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Token Holdings</span>
+            <span class="detail-value" id="detail-holdings">-</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">USD Value</span>
+            <span class="detail-value" id="detail-value">-</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Holder Since</span>
+            <span class="detail-value" id="detail-since">-</span>
         </div>
     </div>
     
@@ -872,7 +913,50 @@
         
         // Touch controls
         let touchStartX = 0, touchStartY = 0;
-        let joystickActive = false;
+        
+        // Mobile movement functions
+        function startMove(direction) {
+            if (!isMobile) return;
+            
+            // Reset all movements
+            moveForward = moveBackward = moveLeft = moveRight = false;
+            
+            // Set movement based on direction
+            switch(direction) {
+                case 'forward':
+                    moveForward = true;
+                    break;
+                case 'backward':
+                    moveBackward = true;
+                    break;
+                case 'left':
+                    moveLeft = true;
+                    break;
+                case 'right':
+                    moveRight = true;
+                    break;
+                case 'forward-left':
+                    moveForward = true;
+                    moveLeft = true;
+                    break;
+                case 'forward-right':
+                    moveForward = true;
+                    moveRight = true;
+                    break;
+                case 'backward-left':
+                    moveBackward = true;
+                    moveLeft = true;
+                    break;
+                case 'backward-right':
+                    moveBackward = true;
+                    moveRight = true;
+                    break;
+            }
+        }
+        
+        function stopMove() {
+            moveForward = moveBackward = moveLeft = moveRight = moveUp = moveDown = false;
+        }
 
         // Initialize
         function init() {
@@ -1008,16 +1092,34 @@
         function createCube(cubeData) {
             const size = cubeData.size === 'small' ? 0.7 : cubeData.size === 'large' ? 1.5 : 1;
             
-            // Create geometry with rounded edges effect
-            const geometry = new THREE.BoxGeometry(size, size, size);
+            // Create more sophisticated geometry with beveled edges
+            const geometry = new THREE.BoxGeometry(size, size, size, 2, 2, 2);
+            
+            // Modify vertices for a more interesting shape
+            const positionAttribute = geometry.attributes.position;
+            for (let i = 0; i < positionAttribute.count; i++) {
+                const x = positionAttribute.getX(i);
+                const y = positionAttribute.getY(i);
+                const z = positionAttribute.getZ(i);
+                
+                // Add subtle deformation for more organic feel
+                const noise = Math.random() * 0.02;
+                positionAttribute.setXYZ(i, x * (1 + noise), y * (1 + noise), z * (1 + noise));
+            }
+            geometry.computeVertexNormals();
+            
+            // Create material with better shading
             const material = new THREE.MeshPhysicalMaterial({
                 color: isDarkMode ? 0x00ff88 : 0x00cc66,
                 emissive: isDarkMode ? 0x00ff88 : 0x00cc66,
-                emissiveIntensity: 0.2,
-                metalness: 0.3,
-                roughness: 0.4,
+                emissiveIntensity: 0.1,
+                metalness: 0.4,
+                roughness: 0.3,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
                 transparent: true,
-                opacity: 0.9
+                opacity: 0.95,
+                side: THREE.DoubleSide
             });
             
             const cube = new THREE.Mesh(geometry, material);
@@ -1027,32 +1129,58 @@
                 cubeData.position.z
             );
             
-            // Add outline
+            // Add inner glow
+            const glowGeometry = new THREE.IcosahedronGeometry(size * 0.8, 1);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: isDarkMode ? 0x00ff88 : 0x00cc66,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.BackSide
+            });
+            const innerGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+            cube.add(innerGlow);
+            
+            // Add wireframe for tech feel
             const edges = new THREE.EdgesGeometry(geometry);
             const line = new THREE.LineSegments(
                 edges,
                 new THREE.LineBasicMaterial({ 
                     color: isDarkMode ? 0xffffff : 0x000000,
                     transparent: true,
-                    opacity: 0.2
+                    opacity: 0.1,
+                    linewidth: 1
                 })
             );
             cube.add(line);
             
-            cube.userData = cubeData;
+            // Store extended data
+            cube.userData = {
+                ...cubeData,
+                wallet: cubeData.wallet_address || `0x${Math.random().toString(16).substr(2, 40)}`,
+                holdings: cubeData.size === 'large' ? Math.floor(Math.random() * 100000 + 50000) :
+                         cubeData.size === 'small' ? Math.floor(Math.random() * 1000 + 100) :
+                         Math.floor(Math.random() * 10000 + 1000),
+                createdAt: cubeData.created_at || new Date().toISOString()
+            };
+            
             scene.add(cube);
             cubes.set(cubeData.id, cube);
             
-            // Spawn animation
+            // Spawn animation with rotation
             cube.scale.set(0, 0, 0);
+            cube.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            
             const targetScale = 1;
             const startTime = Date.now();
             
             function animateSpawn() {
                 const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / 500, 1);
-                const eased = 1 - Math.pow(1 - progress, 3);
+                const progress = Math.min(elapsed / 800, 1);
+                const eased = 1 - Math.pow(1 - progress, 4);
+                
                 cube.scale.set(eased, eased, eased);
+                cube.rotation.x += (1 - eased) * 0.05;
+                cube.rotation.y += (1 - eased) * 0.05;
                 
                 if (progress < 1) {
                     requestAnimationFrame(animateSpawn);
@@ -1255,66 +1383,141 @@
         });
 
         function setupEventListeners() {
-            // Detect if mobile
+            // Check if mobile
+            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            
             if (isMobile) {
-                setupMobileControls();
+                document.getElementById('mobile-controls').style.display = 'block';
             }
             
+            // Raycaster for cube clicking
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            // Mouse/Touch click for cube selection
+            function onPointerDown(event) {
+                event.preventDefault();
+                
+                // Calculate mouse position
+                let clientX, clientY;
+                if (event.type === 'mousedown') {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                } else if (event.type === 'touchstart') {
+                    clientX = event.touches[0].clientX;
+                    clientY = event.touches[0].clientY;
+                }
+                
+                mouse.x = (clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+                
+                // Update raycaster
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Check for intersections with cubes
+                const intersects = raycaster.intersectObjects(Array.from(cubes.values()));
+                
+                if (intersects.length > 0) {
+                    const clickedCube = intersects[0].object;
+                    openCubeDetails(clickedCube);
+                }
+            }
+            
+            // Add click/touch listeners for cube selection
+            renderer.domElement.addEventListener('mousedown', onPointerDown);
+            renderer.domElement.addEventListener('touchstart', onPointerDown);
+            
             // Mouse controls (desktop)
-            document.addEventListener('mousedown', (e) => {
-                if (e.target.id === 'canvas' && !isMobile) {
-                    isMouseDown = true;
-                    mouseX = e.clientX;
-                    mouseY = e.clientY;
-                }
-            });
+            if (!isMobile) {
+                let isDragging = false;
+                let dragStartX = 0;
+                let dragStartY = 0;
+                
+                document.addEventListener('mousedown', (e) => {
+                    if (e.target.id === 'canvas') {
+                        isDragging = false;
+                        isMouseDown = true;
+                        mouseX = e.clientX;
+                        mouseY = e.clientY;
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                    }
+                });
+                
+                document.addEventListener('mouseup', (e) => {
+                    // Only trigger click if not dragging
+                    if (e.target.id === 'canvas' && !isDragging) {
+                        onPointerDown(e);
+                    }
+                    isMouseDown = false;
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (isMouseDown) {
+                        const deltaX = e.clientX - mouseX;
+                        const deltaY = e.clientY - mouseY;
+                        
+                        // Check if user is dragging
+                        if (Math.abs(e.clientX - dragStartX) > 5 || Math.abs(e.clientY - dragStartY) > 5) {
+                            isDragging = true;
+                        }
+                        
+                        cameraRotationY -= deltaX * 0.005;
+                        cameraRotationX -= deltaY * 0.005;
+                        cameraRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRotationX));
+                        
+                        mouseX = e.clientX;
+                        mouseY = e.clientY;
+                    }
+                });
+            }
             
-            document.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-            
-            document.addEventListener('mousemove', (e) => {
-                if (isMouseDown && !isMobile) {
-                    const deltaX = e.clientX - mouseX;
-                    const deltaY = e.clientY - mouseY;
-                    
-                    cameraRotationY -= deltaX * 0.005;
-                    cameraRotationX -= deltaY * 0.005;
-                    cameraRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRotationX));
-                    
-                    mouseX = e.clientX;
-                    mouseY = e.clientY;
-                }
-            });
-            
-            // Touch controls for camera rotation
+            // Touch controls for camera (mobile)
             let touchStarted = false;
+            let lastTouchX = 0;
+            let lastTouchY = 0;
+            let touchMoved = false;
+            
             document.addEventListener('touchstart', (e) => {
-                if (e.target.id === 'canvas') {
+                if (e.target.id === 'canvas' || e.target.tagName === 'CANVAS') {
                     touchStarted = true;
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
+                    touchMoved = false;
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
                 }
-            });
+            }, { passive: false });
             
             document.addEventListener('touchmove', (e) => {
-                if (touchStarted && e.target.id === 'canvas') {
+                if (touchStarted && (e.target.id === 'canvas' || e.target.tagName === 'CANVAS')) {
                     e.preventDefault();
-                    const deltaX = e.touches[0].clientX - touchStartX;
-                    const deltaY = e.touches[0].clientY - touchStartY;
+                    touchMoved = true;
                     
-                    cameraRotationY -= deltaX * 0.005;
-                    cameraRotationX -= deltaY * 0.005;
+                    const touch = e.touches[0];
+                    const deltaX = touch.clientX - lastTouchX;
+                    const deltaY = touch.clientY - lastTouchY;
+                    
+                    cameraRotationY -= deltaX * 0.01;
+                    cameraRotationX -= deltaY * 0.01;
                     cameraRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRotationX));
                     
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
+                    lastTouchX = touch.clientX;
+                    lastTouchY = touch.clientY;
                 }
-            });
+            }, { passive: false });
             
-            document.addEventListener('touchend', () => {
+            document.addEventListener('touchend', (e) => {
+                // Only trigger cube click if touch didn't move
+                if (touchStarted && !touchMoved && e.target.id === 'canvas') {
+                    const touch = e.changedTouches[0];
+                    const mockEvent = {
+                        type: 'touchstart',
+                        touches: [touch],
+                        preventDefault: () => {}
+                    };
+                    onPointerDown(mockEvent);
+                }
                 touchStarted = false;
-            });
+            }, { passive: true });
             
             // Keyboard (desktop only)
             if (!isMobile) {
@@ -1347,101 +1550,178 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 
-                // Check if switched between mobile/desktop
                 const wasMobile = isMobile;
                 isMobile = window.innerWidth <= 768;
                 if (wasMobile !== isMobile) {
-                    if (isMobile) {
-                        setupMobileControls();
-                    } else {
-                        document.getElementById('mobile-controls').style.display = 'none';
-                    }
+                    document.getElementById('mobile-controls').style.display = isMobile ? 'block' : 'none';
                 }
             });
             
-            // Prevent zoom on double tap (mobile)
+            // Prevent iOS bounce and zoom
             if (isMobile) {
-                document.addEventListener('touchstart', (e) => {
-                    if (e.touches.length > 1) {
+                document.body.addEventListener('touchmove', (e) => {
+                    if (e.target.id === 'canvas') {
                         e.preventDefault();
                     }
+                }, { passive: false });
+                
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', (e) => {
+                    const now = Date.now();
+                    if (now - lastTouchEnd <= 300) {
+                        e.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, false);
+            }
+        }
+        
+        // Cube details functions
+        function openCubeDetails(cube) {
+            const details = document.getElementById('cube-details');
+            const data = cube.userData;
+            
+            // Populate details
+            document.getElementById('detail-wallet').textContent = 
+                data.wallet ? `${data.wallet.slice(0, 6)}...${data.wallet.slice(-4)}` : 'Unknown';
+            document.getElementById('detail-wallet').setAttribute('data-full', data.wallet || '');
+            
+            document.getElementById('detail-size').textContent = 
+                (data.size || 'medium').toUpperCase();
+            
+            document.getElementById('detail-holdings').textContent = 
+                (data.holdings || Math.floor(Math.random() * 10000)).toLocaleString() + ' TOKENS';
+            
+            const tokenPrice = 0.0025; // Example price
+            const usdValue = (data.holdings || 1000) * tokenPrice;
+            document.getElementById('detail-value').textContent = 
+                '
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Camera rotation
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = cameraRotationY;
+            camera.rotation.x = cameraRotationX;
+            
+            // Movement
+            const moveSpeed = 0.3;
+            const forward = new THREE.Vector3(0, 0, -1);
+            const right = new THREE.Vector3(1, 0, 0);
+            
+            forward.applyQuaternion(camera.quaternion);
+            right.applyQuaternion(camera.quaternion);
+            forward.y = 0;
+            right.y = 0;
+            forward.normalize();
+            right.normalize();
+            
+            if (moveForward) camera.position.addScaledVector(forward, moveSpeed);
+            if (moveBackward) camera.position.addScaledVector(forward, -moveSpeed);
+            if (moveLeft) camera.position.addScaledVector(right, -moveSpeed);
+            if (moveRight) camera.position.addScaledVector(right, moveSpeed);
+            if (moveUp) camera.position.y += moveSpeed;
+            if (moveDown) camera.position.y -= moveSpeed;
+            
+            camera.position.y = Math.max(0.5, camera.position.y);
+            
+            // Animate cubes
+            const time = Date.now() * 0.001;
+            cubes.forEach(cube => {
+                cube.rotation.x += 0.005;
+                cube.rotation.y += 0.005;
+                
+                // Floating effect
+                cube.position.y += Math.sin(time + cube.userData.id.charCodeAt(0)) * 0.002;
+            });
+            
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html> + usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            const createdDate = data.createdAt ? new Date(data.createdAt) : new Date();
+            document.getElementById('detail-since').textContent = 
+                createdDate.toLocaleDateString();
+            
+            // Highlight the selected cube
+            cube.material.emissive.setHex(0xff00ff);
+            cube.material.emissiveIntensity = 0.5;
+            
+            // Show panel
+            details.classList.add('active');
+        }
+        
+        function closeCubeDetails() {
+            document.getElementById('cube-details').classList.remove('active');
+            
+            // Remove highlight from all cubes
+            cubes.forEach(cube => {
+                cube.material.emissive.setHex(isDarkMode ? 0x00ff88 : 0x00cc66);
+                cube.material.emissiveIntensity = 0.1;
+            });
+        }
+        
+        function copyAddress() {
+            const walletElement = document.getElementById('detail-wallet');
+            const fullAddress = walletElement.getAttribute('data-full');
+            
+            if (fullAddress) {
+                navigator.clipboard.writeText(fullAddress).then(() => {
+                    showToast('Wallet address copied!');
                 });
             }
         }
         
-        function setupMobileControls() {
-            const mobileControls = document.getElementById('mobile-controls');
-            const joystick = document.getElementById('joystick');
-            const handle = document.getElementById('joystick-handle');
+        // Global functions for mobile
+        window.startMove = function(direction) {
+            if (!isMobile) return;
             
-            mobileControls.style.display = 'block';
+            moveForward = moveBackward = moveLeft = moveRight = false;
             
-            // Joystick controls
-            joystick.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                joystickActive = true;
-            });
-            
-            joystick.addEventListener('touchmove', (e) => {
-                if (!joystickActive) return;
-                e.preventDefault();
-                
-                const rect = joystick.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                const touch = e.touches[0];
-                let deltaX = touch.clientX - centerX;
-                let deltaY = touch.clientY - centerY;
-                
-                // Limit to circle
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                const maxDistance = rect.width / 2 - 20;
-                
-                if (distance > maxDistance) {
-                    deltaX = (deltaX / distance) * maxDistance;
-                    deltaY = (deltaY / distance) * maxDistance;
-                }
-                
-                // Update handle position
-                handle.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
-                
-                // Update movement
-                const threshold = 10;
-                moveForward = deltaY < -threshold;
-                moveBackward = deltaY > threshold;
-                moveLeft = deltaX < -threshold;
-                moveRight = deltaX > threshold;
-            });
-            
-            joystick.addEventListener('touchend', () => {
-                joystickActive = false;
-                handle.style.transform = 'translate(-50%, -50%)';
-                moveForward = moveBackward = moveLeft = moveRight = false;
-            });
-            
-            // Add pinch to zoom gesture
-            let lastDistance = 0;
-            document.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2) {
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (lastDistance > 0) {
-                        const delta = distance - lastDistance;
-                        camera.position.z -= delta * 0.05;
-                        camera.position.z = Math.max(5, Math.min(50, camera.position.z));
-                    }
-                    
-                    lastDistance = distance;
-                }
-            });
-            
-            document.addEventListener('touchend', () => {
-                lastDistance = 0;
-            });
+            switch(direction) {
+                case 'forward':
+                    moveForward = true;
+                    break;
+                case 'backward':
+                    moveBackward = true;
+                    break;
+                case 'left':
+                    moveLeft = true;
+                    break;
+                case 'right':
+                    moveRight = true;
+                    break;
+                case 'forward-left':
+                    moveForward = true;
+                    moveLeft = true;
+                    break;
+                case 'forward-right':
+                    moveForward = true;
+                    moveRight = true;
+                    break;
+                case 'backward-left':
+                    moveBackward = true;
+                    moveLeft = true;
+                    break;
+                case 'backward-right':
+                    moveBackward = true;
+                    moveRight = true;
+                    break;
+            }
         }
+        
+        window.stopMove = function() {
+            moveForward = moveBackward = moveLeft = moveRight = moveUp = moveDown = false;
+        }
+        
+        window.closeCubeDetails = closeCubeDetails;
+        window.copyAddress = copyAddress;
 
         function animate() {
             requestAnimationFrame(animate);
