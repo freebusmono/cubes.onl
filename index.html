@@ -645,36 +645,58 @@
             }
         }
         
-        /* Touch controls for mobile */
+        /* Mobile controls - simplified */
         .mobile-controls {
             display: none;
             position: fixed;
             bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
+            right: 0;
             z-index: 998;
+            padding: 0 20px;
         }
         
-        .mobile-joystick {
-            width: 120px;
-            height: 120px;
+        .mobile-control-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .move-btn {
+            width: 50px;
+            height: 50px;
             background: var(--bg-panel);
+            backdrop-filter: blur(10px);
             border: 2px solid var(--border);
             border-radius: 50%;
-            position: relative;
-            touch-action: none;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
-        .joystick-handle {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            transition: none;
+        .move-btn:active {
+            background: var(--primary);
+            color: var(--bg-main);
+            transform: scale(0.95);
+        }
+        
+        .move-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            gap: 5px;
+        }
+        
+        .move-btn.center {
+            opacity: 0;
+            pointer-events: none;
         }
         
         /* Portrait orientation specific */
@@ -809,6 +831,13 @@
         </button>
     </div>
     
+    <!-- Mobile Controls -->
+    <div class="mobile-controls" id="mobile-controls">
+        <div class="mobile-joystick" id="joystick">
+            <div class="joystick-handle" id="joystick-handle"></div>
+        </div>
+    </div>
+    
     <!-- Navigation Hint -->
     <div class="nav-hint">WASD + Mouse</div>
 
@@ -824,6 +853,7 @@
         let currentTradeMode = 'buy';
         let visualMode = 'default';
         let isDarkMode = true;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         // API
         const API_URL = window.location.hostname === 'localhost' 
@@ -839,6 +869,10 @@
         let moveForward = false, moveBackward = false;
         let moveLeft = false, moveRight = false;
         let moveUp = false, moveDown = false;
+        
+        // Touch controls
+        let touchStartX = 0, touchStartY = 0;
+        let joystickActive = false;
 
         // Initialize
         function init() {
@@ -1221,9 +1255,14 @@
         });
 
         function setupEventListeners() {
-            // Mouse controls
+            // Detect if mobile
+            if (isMobile) {
+                setupMobileControls();
+            }
+            
+            // Mouse controls (desktop)
             document.addEventListener('mousedown', (e) => {
-                if (e.target.id === 'canvas') {
+                if (e.target.id === 'canvas' && !isMobile) {
                     isMouseDown = true;
                     mouseX = e.clientX;
                     mouseY = e.clientY;
@@ -1235,7 +1274,7 @@
             });
             
             document.addEventListener('mousemove', (e) => {
-                if (isMouseDown) {
+                if (isMouseDown && !isMobile) {
                     const deltaX = e.clientX - mouseX;
                     const deltaY = e.clientY - mouseY;
                     
@@ -1248,34 +1287,159 @@
                 }
             });
             
-            // Keyboard
-            document.addEventListener('keydown', (e) => {
-                switch(e.key.toLowerCase()) {
-                    case 'w': moveForward = true; break;
-                    case 's': moveBackward = true; break;
-                    case 'a': moveLeft = true; break;
-                    case 'd': moveRight = true; break;
-                    case ' ': moveUp = true; e.preventDefault(); break;
-                    case 'shift': moveDown = true; break;
+            // Touch controls for camera rotation
+            let touchStarted = false;
+            document.addEventListener('touchstart', (e) => {
+                if (e.target.id === 'canvas') {
+                    touchStarted = true;
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
                 }
             });
             
-            document.addEventListener('keyup', (e) => {
-                switch(e.key.toLowerCase()) {
-                    case 'w': moveForward = false; break;
-                    case 's': moveBackward = false; break;
-                    case 'a': moveLeft = false; break;
-                    case 'd': moveRight = false; break;
-                    case ' ': moveUp = false; break;
-                    case 'shift': moveDown = false; break;
+            document.addEventListener('touchmove', (e) => {
+                if (touchStarted && e.target.id === 'canvas') {
+                    e.preventDefault();
+                    const deltaX = e.touches[0].clientX - touchStartX;
+                    const deltaY = e.touches[0].clientY - touchStartY;
+                    
+                    cameraRotationY -= deltaX * 0.005;
+                    cameraRotationX -= deltaY * 0.005;
+                    cameraRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRotationX));
+                    
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
                 }
             });
+            
+            document.addEventListener('touchend', () => {
+                touchStarted = false;
+            });
+            
+            // Keyboard (desktop only)
+            if (!isMobile) {
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key.toLowerCase()) {
+                        case 'w': moveForward = true; break;
+                        case 's': moveBackward = true; break;
+                        case 'a': moveLeft = true; break;
+                        case 'd': moveRight = true; break;
+                        case ' ': moveUp = true; e.preventDefault(); break;
+                        case 'shift': moveDown = true; break;
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    switch(e.key.toLowerCase()) {
+                        case 'w': moveForward = false; break;
+                        case 's': moveBackward = false; break;
+                        case 'a': moveLeft = false; break;
+                        case 'd': moveRight = false; break;
+                        case ' ': moveUp = false; break;
+                        case 'shift': moveDown = false; break;
+                    }
+                });
+            }
             
             // Window resize
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                
+                // Check if switched between mobile/desktop
+                const wasMobile = isMobile;
+                isMobile = window.innerWidth <= 768;
+                if (wasMobile !== isMobile) {
+                    if (isMobile) {
+                        setupMobileControls();
+                    } else {
+                        document.getElementById('mobile-controls').style.display = 'none';
+                    }
+                }
+            });
+            
+            // Prevent zoom on double tap (mobile)
+            if (isMobile) {
+                document.addEventListener('touchstart', (e) => {
+                    if (e.touches.length > 1) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        }
+        
+        function setupMobileControls() {
+            const mobileControls = document.getElementById('mobile-controls');
+            const joystick = document.getElementById('joystick');
+            const handle = document.getElementById('joystick-handle');
+            
+            mobileControls.style.display = 'block';
+            
+            // Joystick controls
+            joystick.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                joystickActive = true;
+            });
+            
+            joystick.addEventListener('touchmove', (e) => {
+                if (!joystickActive) return;
+                e.preventDefault();
+                
+                const rect = joystick.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const touch = e.touches[0];
+                let deltaX = touch.clientX - centerX;
+                let deltaY = touch.clientY - centerY;
+                
+                // Limit to circle
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const maxDistance = rect.width / 2 - 20;
+                
+                if (distance > maxDistance) {
+                    deltaX = (deltaX / distance) * maxDistance;
+                    deltaY = (deltaY / distance) * maxDistance;
+                }
+                
+                // Update handle position
+                handle.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+                
+                // Update movement
+                const threshold = 10;
+                moveForward = deltaY < -threshold;
+                moveBackward = deltaY > threshold;
+                moveLeft = deltaX < -threshold;
+                moveRight = deltaX > threshold;
+            });
+            
+            joystick.addEventListener('touchend', () => {
+                joystickActive = false;
+                handle.style.transform = 'translate(-50%, -50%)';
+                moveForward = moveBackward = moveLeft = moveRight = false;
+            });
+            
+            // Add pinch to zoom gesture
+            let lastDistance = 0;
+            document.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (lastDistance > 0) {
+                        const delta = distance - lastDistance;
+                        camera.position.z -= delta * 0.05;
+                        camera.position.z = Math.max(5, Math.min(50, camera.position.z));
+                    }
+                    
+                    lastDistance = distance;
+                }
+            });
+            
+            document.addEventListener('touchend', () => {
+                lastDistance = 0;
             });
         }
 
