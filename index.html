@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Token Visualizer | Real-Time 3D Analytics</title>
+    <title>Cubes.onl - Solana Token 3D Visualizer</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap');
         
@@ -18,7 +18,6 @@
             background: #000;
             color: #fff;
             overflow: hidden;
-            cursor: crosshair;
         }
 
         #canvas {
@@ -27,514 +26,14 @@
             display: block;
         }
 
-        /* Glassmorphism UI Panels */
-        .glass-panel {
-            position: absolute;
-            background: linear-gradient(135deg, rgba(0, 255, 0, 0.05), rgba(0, 136, 255, 0.05));
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 255, 0, 0.2);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 
-                0 8px 32px 0 rgba(0, 255, 0, 0.1),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .glass-panel:hover {
-            border-color: rgba(0, 255, 0, 0.4);
-            box-shadow: 
-                0 8px 32px 0 rgba(0, 255, 0, 0.2),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
-        }
-
-        /* Main Dashboard */
-        .main-dashboard {
-            top: 20px;
-            left: 20px;
-            width: 380px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .main-dashboard::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .main-dashboard::-webkit-scrollbar-track {
-            background: rgba(0, 255, 0, 0.1);
-            border-radius: 3px;
-        }
-
-        .main-dashboard::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 0, 0.5);
-            border-radius: 3px;
-        }
-
-        .logo-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
-        }
-
-        .logo {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #00ff00, #0088ff);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            animation: logoGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes logoGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(0, 255, 0, 0.8); }
-        }
-
-        .logo-text {
-            flex: 1;
-        }
-
-        .logo-title {
-            font-family: 'Orbitron', monospace;
-            font-size: 20px;
-            font-weight: 900;
-            background: linear-gradient(90deg, #00ff00, #0088ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .logo-subtitle {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 2px;
-        }
-
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: rgba(0, 255, 0, 0.1);
-            border-radius: 20px;
-            font-size: 12px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff3333;
-            animation: pulse 2s infinite;
-        }
-
-        .status-dot.connected {
-            background: #00ff00;
-            box-shadow: 0 0 10px #00ff00;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 25px 0;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(0, 255, 0, 0.1);
-            border-radius: 12px;
-            padding: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            background: rgba(0, 255, 0, 0.05);
-            transform: translateY(-2px);
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            font-family: 'Orbitron', monospace;
-            background: linear-gradient(90deg, #00ff00, #00ffaa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-change {
-            font-size: 11px;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .stat-change.positive {
-            color: #00ff00;
-        }
-
-        .stat-change.negative {
-            color: #ff3366;
-        }
-
-        /* Volume Bars */
-        .volume-section {
-            margin: 25px 0;
-        }
-
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(0, 255, 0, 0.3), transparent);
-        }
-
-        .volume-bar-container {
-            margin: 15px 0;
-        }
-
-        .volume-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-
-        .volume-bar {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .volume-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.5s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .volume-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.3), 
-                transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .volume-fill.buy {
-            background: linear-gradient(90deg, #00ff00, #00ffaa);
-        }
-
-        .volume-fill.sell {
-            background: linear-gradient(90deg, #ff3366, #ff6699);
-        }
-
-        /* Recent Transactions */
-        .transactions-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 15px;
-        }
-
-        .transactions-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .transactions-list::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 0, 0.3);
-            border-radius: 2px;
-        }
-
-        .transaction-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-            border-left: 2px solid transparent;
-            font-size: 12px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .transaction-item.buy {
-            border-left-color: #00ff00;
-        }
-
-        .transaction-item.sell {
-            border-left-color: #ff3366;
-        }
-
-        .tx-type {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .tx-type.buy {
-            background: rgba(0, 255, 0, 0.2);
-            color: #00ff00;
-        }
-
-        .tx-type.sell {
-            background: rgba(255, 51, 102, 0.2);
-            color: #ff3366;
-        }
-
-        .tx-wallet {
-            flex: 1;
-            font-family: monospace;
-            opacity: 0.7;
-        }
-
-        .tx-amount {
-            font-weight: 600;
-        }
-
-        /* Control Panel */
-        .control-panel {
-            top: 20px;
-            right: 20px;
-            width: 320px;
-        }
-
-        .input-group {
-            margin: 15px 0;
-        }
-
-        .input-label {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(0, 255, 0, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-family: monospace;
-            font-size: 13px;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: rgba(0, 255, 0, 0.5);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
-        }
-
-        .button-group {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .btn {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, rgba(0, 255, 0, 0.1), rgba(0, 255, 0, 0.2));
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            color: #00ff00;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.3), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 255, 0, 0.3);
-            border-color: rgba(0, 255, 0, 0.5);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn.primary {
-            grid-column: span 2;
-            background: linear-gradient(135deg, #00ff00, #00cc00);
-            color: #000;
-            font-weight: 700;
-        }
-
-        .btn.danger {
-            background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(255, 51, 102, 0.2));
-            border-color: rgba(255, 51, 102, 0.3);
-            color: #ff3366;
-        }
-
-        /* Visual Mode Selector */
-        .mode-selector {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin: 15px 0;
-        }
-
-        .mode-btn {
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(0, 255, 0, 0.1);
-            border-radius: 8px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .mode-btn.active {
-            background: rgba(0, 255, 0, 0.1);
-            border-color: rgba(0, 255, 0, 0.3);
-            color: #00ff00;
-        }
-
-        .mode-btn:hover {
-            border-color: rgba(0, 255, 0, 0.3);
-            color: #00ff00;
-        }
-
-        /* Navigation Help */
-        .nav-help {
-            bottom: 20px;
-            left: 20px;
-            max-width: 300px;
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
-        .nav-help-title {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #00ff00;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 5px 0;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .nav-key {
-            padding: 3px 6px;
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 10px;
-            color: #00ff00;
-        }
-
-        /* Performance Monitor */
-        .performance-monitor {
-            bottom: 20px;
-            right: 20px;
-            font-size: 10px;
-            font-family: monospace;
-            opacity: 0.6;
-        }
-
-        .perf-stat {
-            margin: 3px 0;
-        }
-
-        /* Loading Overlay */
+        /* Loading Screen */
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -566,451 +65,339 @@
             font-family: 'Orbitron', monospace;
             font-size: 14px;
             color: #00ff00;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        /* Wallet Info Tooltip */
-        .wallet-tooltip {
+        /* Glass Panels */
+        .glass-panel {
             position: absolute;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 255, 0, 0.1));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 11px;
-            pointer-events: none;
-            z-index: 1000;
-            display: none;
-            min-width: 200px;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.05), rgba(0, 136, 255, 0.05));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 255, 0, 0.1);
         }
 
-        .wallet-tooltip-header {
-            font-weight: 600;
-            color: #00ff00;
-            margin-bottom: 8px;
+        /* Main Dashboard */
+        .dashboard {
+            top: 20px;
+            left: 20px;
+            width: 350px;
         }
 
-        .wallet-tooltip-row {
+        .logo-header {
             display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-            color: rgba(255, 255, 255, 0.7);
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-dashboard {
-                width: 340px;
-            }
-            
-            .control-panel {
-                width: 280px;
-            }
-            
-            .nav-help {
-                display: none;
-            }
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00ff00, #0088ff);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #00ff00, #0088ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 255, 0, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            color: #00ff00;
+        }
+
+        /* Control Panel */
+        .controls {
+            top: 20px;
+            right: 20px;
+            width: 280px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.1), rgba(0, 255, 0, 0.2));
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(255, 51, 102, 0.2));
+            border-color: rgba(255, 51, 102, 0.3);
+            color: #ff3366;
+        }
+
+        /* Navigation Help */
+        .nav-help {
+            bottom: 20px;
+            left: 20px;
+            font-size: 11px;
+        }
+
+        .nav-item {
+            margin: 5px 0;
+            opacity: 0.7;
+        }
+
+        /* Status */
+        .status {
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff00;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    
-    <!-- Loading Overlay -->
+    <!-- Loading Screen -->
     <div class="loading-overlay" id="loading">
         <div class="loader"></div>
-        <div class="loading-text">INITIALIZING QUANTUM FIELD...</div>
+        <div class="loading-text">Initializing Quantum Field...</div>
     </div>
+
+    <!-- Canvas -->
+    <canvas id="canvas"></canvas>
     
-    <!-- Main Dashboard -->
-    <div class="glass-panel main-dashboard">
+    <!-- Dashboard -->
+    <div class="glass-panel dashboard">
         <div class="logo-header">
             <div class="logo">🔮</div>
-            <div class="logo-text">
-                <div class="logo-title">SOLANA VISUALIZER</div>
-                <div class="logo-subtitle">Real-Time Token Analytics</div>
-            </div>
-            <div class="connection-status">
-                <div class="status-dot" id="status-dot"></div>
-                <span id="status-text">OFFLINE</span>
+            <div>
+                <div class="logo-title">CUBES.ONL</div>
+                <div style="font-size: 12px; opacity: 0.5;">Solana Token Visualizer</div>
             </div>
         </div>
         
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Total Holders</div>
-                <div class="stat-value" id="total-holders">0</div>
-                <div class="stat-change positive">
-                    <span>▲</span>
-                    <span id="holders-change">+0%</span>
-                </div>
+                <div class="stat-label">Wallets</div>
+                <div class="stat-value" id="wallet-count">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Market Cap</div>
-                <div class="stat-value" id="market-cap">$0</div>
-                <div class="stat-change positive">
-                    <span>▲</span>
-                    <span id="cap-change">+0%</span>
-                </div>
+                <div class="stat-label">Volume</div>
+                <div class="stat-value" id="volume">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">24h Volume</div>
-                <div class="stat-value" id="volume-24h">$0</div>
-                <div class="stat-change negative">
-                    <span>▼</span>
-                    <span id="volume-change">-0%</span>
-                </div>
+                <div class="stat-label">Buys</div>
+                <div class="stat-value" id="buys">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Transactions</div>
-                <div class="stat-value" id="tx-count">0</div>
-                <div class="stat-change positive">
-                    <span>▲</span>
-                    <span id="tx-change">+0%</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="volume-section">
-            <div class="section-title">VOLUME DISTRIBUTION</div>
-            <div class="volume-bar-container">
-                <div class="volume-label">
-                    <span>Buy Pressure</span>
-                    <span id="buy-percent">0%</span>
-                </div>
-                <div class="volume-bar">
-                    <div class="volume-fill buy" id="buy-bar" style="width: 0%"></div>
-                </div>
-            </div>
-            <div class="volume-bar-container">
-                <div class="volume-label">
-                    <span>Sell Pressure</span>
-                    <span id="sell-percent">0%</span>
-                </div>
-                <div class="volume-bar">
-                    <div class="volume-fill sell" id="sell-bar" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="volume-section">
-            <div class="section-title">RECENT TRANSACTIONS</div>
-            <div class="transactions-list" id="tx-list">
-                <!-- Transactions will be added here -->
+                <div class="stat-label">Sells</div>
+                <div class="stat-value" id="sells">0</div>
             </div>
         </div>
     </div>
     
-    <!-- Control Panel -->
-    <div class="glass-panel control-panel">
-        <div class="section-title">CONNECTION</div>
-        
-        <div class="input-group">
-            <div class="input-label">Token Address</div>
-            <input type="text" id="token-address" placeholder="Enter Solana token address..." />
-        </div>
-        
-        <div class="input-group">
-            <div class="input-label">RPC Endpoint</div>
-            <input type="text" id="rpc-endpoint" value="https://api.devnet.solana.com" />
-        </div>
-        
-        <button class="btn primary" onclick="connectToSolana()">
-            CONNECT TO BLOCKCHAIN
-        </button>
-        
-        <div class="section-title" style="margin-top: 25px">VISUALIZATION</div>
-        
-        <div class="mode-selector">
-            <div class="mode-btn active" onclick="setVisualMode('default')" data-mode="default">DEFAULT</div>
-            <div class="mode-btn" onclick="setVisualMode('galaxy')" data-mode="galaxy">GALAXY</div>
-            <div class="mode-btn" onclick="setVisualMode('grid')" data-mode="grid">GRID</div>
-            <div class="mode-btn" onclick="setVisualMode('sphere')" data-mode="sphere">SPHERE</div>
-        </div>
-        
-        <div class="section-title" style="margin-top: 25px">SIMULATION</div>
-        
-        <div class="button-group">
-            <button class="btn" onclick="simulateBuy('small')">BUY SMALL</button>
-            <button class="btn" onclick="simulateBuy('large')">BUY LARGE</button>
-            <button class="btn danger" onclick="simulateSell('small')">SELL SMALL</button>
-            <button class="btn danger" onclick="simulateSell('large')">SELL LARGE</button>
-        </div>
-        
-        <button class="btn" onclick="resetCamera()" style="width: 100%">
-            RESET CAMERA
-        </button>
+    <!-- Controls -->
+    <div class="glass-panel controls">
+        <h3 style="color: #00ff00; margin-bottom: 15px;">Simulation</h3>
+        <button class="btn" onclick="addCube('small')">Small Buy</button>
+        <button class="btn" onclick="addCube('medium')">Medium Buy</button>
+        <button class="btn" onclick="addCube('large')">Large Buy</button>
+        <button class="btn danger" onclick="removeCube()">Simulate Sell</button>
+        <button class="btn" onclick="resetView()">Reset Camera</button>
     </div>
     
     <!-- Navigation Help -->
     <div class="glass-panel nav-help">
-        <div class="nav-help-title">NAVIGATION</div>
-        <div class="nav-item">
-            <span class="nav-key">CLICK + DRAG</span>
-            <span>Look around</span>
-        </div>
-        <div class="nav-item">
-            <span class="nav-key">W A S D</span>
-            <span>Move around</span>
-        </div>
-        <div class="nav-item">
-            <span class="nav-key">SPACE</span>
-            <span>Move up</span>
-        </div>
-        <div class="nav-item">
-            <span class="nav-key">SHIFT</span>
-            <span>Move down</span>
-        </div>
-        <div class="nav-item">
-            <span class="nav-key">SCROLL</span>
-            <span>Move forward/back</span>
-        </div>
+        <div style="color: #00ff00; font-weight: bold; margin-bottom: 10px;">Controls</div>
+        <div class="nav-item">🖱️ Drag: Look around</div>
+        <div class="nav-item">⌨️ WASD: Move</div>
+        <div class="nav-item">⌨️ Space/Shift: Up/Down</div>
+        <div class="nav-item">🖱️ Scroll: Zoom</div>
     </div>
     
-    <!-- Performance Monitor -->
-    <div class="glass-panel performance-monitor">
-        <div class="perf-stat">FPS: <span id="fps">60</span></div>
-        <div class="perf-stat">CUBES: <span id="cube-count">0</span></div>
-        <div class="perf-stat">PARTICLES: <span id="particle-count">0</span></div>
-    </div>
-    
-    <!-- Wallet Tooltip -->
-    <div class="wallet-tooltip" id="wallet-tooltip">
-        <div class="wallet-tooltip-header">WALLET INFO</div>
-        <div class="wallet-tooltip-row">
-            <span>Address:</span>
-            <span id="tooltip-address">-</span>
-        </div>
-        <div class="wallet-tooltip-row">
-            <span>Balance:</span>
-            <span id="tooltip-balance">-</span>
-        </div>
-        <div class="wallet-tooltip-row">
-            <span>Type:</span>
-            <span id="tooltip-type">-</span>
-        </div>
+    <!-- Status -->
+    <div class="glass-panel status">
+        <span class="status-dot"></span>
+        <span>System Online</span>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script>
         // Global variables
         let scene, camera, renderer, raycaster, mouse;
         let cubes = new Map();
         let particles = [];
         let stats = {
-            holders: 0,
-            marketCap: 0,
-            volume24h: 0,
-            transactions: 0,
-            buyVolume: 0,
-            sellVolume: 0
+            wallets: 0,
+            volume: 0,
+            buys: 0,
+            sells: 0
         };
-        let visualMode = 'default';
-        let connection = null;
-        let tokenAddress = null;
-        let subscriptionId = null;
         
         // Camera controls
-        let cameraRotationX = 0;
-        let cameraRotationY = 0;
         let isMouseDown = false;
         let mouseX = 0, mouseY = 0;
+        let cameraRotationX = 0, cameraRotationY = 0;
         
         // Movement
         let moveForward = false, moveBackward = false;
         let moveLeft = false, moveRight = false;
         let moveUp = false, moveDown = false;
-        
-        // Performance
-        let frameCount = 0;
-        let lastTime = performance.now();
-        let fps = 60;
 
-        // Audio Context
-        let audioContext = null;
-        
-        // Transaction history
-        let transactionHistory = [];
-
-        // Initialize
-        async function init() {
-            try {
-                // Setup Three.js
-                setupScene();
-                setupLighting();
-                setupPostProcessing();
-                setupEventListeners();
-                
-                // Initialize audio with user interaction fallback
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {
-                    console.log('Audio context will initialize on first user interaction');
-                }
-                
-                // Start animation
-                animate();
-                
-                // Hide loading after scene is ready
-                setTimeout(() => {
-                    const loadingElement = document.getElementById('loading');
-                    if (loadingElement) {
-                        loadingElement.classList.add('hidden');
-                    }
-                    
-                    // Add some demo cubes
-                    setTimeout(() => {
-                        simulateBuy('medium');
-                        simulateBuy('small');
-                        simulateBuy('large');
-                    }, 1000);
-                }, 1500);
-            } catch (error) {
-                console.error('Initialization error:', error);
-                // Hide loading screen even if there's an error
-                const loadingElement = document.getElementById('loading');
-                if (loadingElement) {
-                    loadingElement.classList.add('hidden');
-                }
-                alert('There was an error initializing the 3D scene. Please refresh the page.');
-            }
-        }
-
-        function setupScene() {
+        // Initialize everything
+        function init() {
+            // Create scene
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x000000, 1, 150);
+            scene.fog = new THREE.Fog(0x000000, 1, 100);
             
+            // Create camera
             camera = new THREE.PerspectiveCamera(
                 75,
                 window.innerWidth / window.innerHeight,
                 0.1,
                 1000
             );
-            camera.position.set(0, 2, 0);
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
             
+            // Create renderer
             renderer = new THREE.WebGLRenderer({
                 canvas: document.getElementById('canvas'),
-                antialias: true,
-                alpha: true
+                antialias: true
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setPixelRatio(window.devicePixelRatio);
             
+            // Raycaster for mouse interaction
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
             
-            // Grid with glow effect
-            const gridHelper = new THREE.GridHelper(100, 50, 0x00ff00, 0x003300);
-            scene.add(gridHelper);
-            
-            // Add secondary grid for depth
-            const gridHelper2 = new THREE.GridHelper(100, 20, 0x0088ff, 0x004466);
-            gridHelper2.position.y = 0.01;
-            scene.add(gridHelper2);
-            
-            // Create starfield
-            createAdvancedStarfield();
-        }
-
-        function setupLighting() {
-            // Ambient light
+            // Add lights
             const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
             scene.add(ambientLight);
             
-            // Main point light with color animation
-            const mainLight = new THREE.PointLight(0x00ff00, 2, 150);
-            mainLight.position.set(0, 20, 0);
-            mainLight.castShadow = true;
-            scene.add(mainLight);
+            const pointLight = new THREE.PointLight(0x00ff00, 2, 100);
+            pointLight.position.set(0, 10, 0);
+            scene.add(pointLight);
             
-            // Accent lights
-            const accentLight1 = new THREE.PointLight(0x0088ff, 1, 100);
-            accentLight1.position.set(30, 15, 30);
-            scene.add(accentLight1);
+            const pointLight2 = new THREE.PointLight(0x0088ff, 1, 100);
+            pointLight2.position.set(20, 10, 20);
+            scene.add(pointLight2);
             
-            const accentLight2 = new THREE.PointLight(0xff00ff, 0.5, 100);
-            accentLight2.position.set(-30, 15, -30);
-            scene.add(accentLight2);
+            // Add grid
+            const gridHelper = new THREE.GridHelper(100, 50, 0x00ff00, 0x003300);
+            scene.add(gridHelper);
             
-            // Directional light for shadows
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            dirLight.position.set(10, 20, 10);
-            dirLight.castShadow = true;
-            dirLight.shadow.camera.near = 0.1;
-            dirLight.shadow.camera.far = 50;
-            dirLight.shadow.camera.left = -50;
-            dirLight.shadow.camera.right = 50;
-            dirLight.shadow.camera.top = 50;
-            dirLight.shadow.camera.bottom = -50;
-            scene.add(dirLight);
+            // Add stars
+            createStars();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Start animation loop
+            animate();
+            
+            // Hide loading screen after a delay
+            setTimeout(function() {
+                document.getElementById('loading').classList.add('hidden');
+                
+                // Add demo cubes
+                setTimeout(function() {
+                    addCube('medium');
+                    addCube('small');
+                    addCube('large');
+                }, 500);
+            }, 1500);
         }
 
-        function setupPostProcessing() {
-            // Add glow spheres for atmosphere
-            const glowGeometry = new THREE.SphereGeometry(200, 32, 32);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0x0088ff,
-                transparent: true,
-                opacity: 0.02,
-                side: THREE.BackSide
-            });
-            const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial);
-            scene.add(glowSphere);
-        }
-
-        function createAdvancedStarfield() {
-            // Create multiple layers of stars for depth
-            for (let layer = 0; layer < 3; layer++) {
-                const geometry = new THREE.BufferGeometry();
-                const vertices = [];
-                const colors = [];
-                const sizes = [];
-                
-                const count = 5000 - (layer * 1500);
-                const spread = 500 + (layer * 500);
-                
-                for (let i = 0; i < count; i++) {
-                    vertices.push(
-                        (Math.random() - 0.5) * spread,
-                        (Math.random() - 0.5) * spread,
-                        (Math.random() - 0.5) * spread
-                    );
-                    
-                    // Varying star colors
-                    const starType = Math.random();
-                    if (starType < 0.7) {
-                        colors.push(1, 1, 1); // White
-                    } else if (starType < 0.9) {
-                        colors.push(0.5, 0.7, 1); // Blue
-                    } else {
-                        colors.push(1, 0.8, 0.5); // Yellow
-                    }
-                    
-                    sizes.push(Math.random() * 2 + 0.5);
-                }
-                
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-                geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-                
-                const material = new THREE.PointsMaterial({
-                    size: 2 - layer * 0.5,
-                    vertexColors: true,
-                    transparent: true,
-                    opacity: 0.8 - layer * 0.2,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false
-                });
-                
-                const stars = new THREE.Points(geometry, material);
-                stars.userData.layer = layer;
-                scene.add(stars);
+        // Create starfield
+        function createStars() {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            
+            for (let i = 0; i < 5000; i++) {
+                vertices.push(
+                    (Math.random() - 0.5) * 1000,
+                    (Math.random() - 0.5) * 1000,
+                    (Math.random() - 0.5) * 1000
+                );
             }
+            
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 1,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const stars = new THREE.Points(geometry, material);
+            scene.add(stars);
         }
 
-        function createCube(walletAddress, size = 'medium', type = 'buy') {
+        // Add cube function
+        function addCube(size) {
             const sizeMap = {
                 small: 0.5,
                 medium: 1,
@@ -1018,170 +405,118 @@
             };
             
             const cubeSize = sizeMap[size] || 1;
-            
-            // Create main cube
             const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-            const material = new THREE.MeshPhysicalMaterial({
-                color: type === 'buy' ? 0x00ff00 : 0xff3366,
-                emissive: type === 'buy' ? 0x00ff00 : 0xff3366,
-                emissiveIntensity: 0.3,
-                metalness: 0.8,
-                roughness: 0.2,
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x00ff00,
+                emissive: 0x00ff00,
+                emissiveIntensity: 0.2,
                 transparent: true,
-                opacity: 0.9,
-                envMapIntensity: 1
+                opacity: 0.9
             });
             
             const cube = new THREE.Mesh(geometry, material);
             
-            // Position based on visual mode
-            setPositionByMode(cube);
+            // Random position
+            cube.position.x = (Math.random() - 0.5) * 30;
+            cube.position.y = Math.random() * 10 + 1;
+            cube.position.z = (Math.random() - 0.5) * 30;
             
             // Random rotation
             cube.rotation.x = Math.random() * Math.PI;
             cube.rotation.y = Math.random() * Math.PI;
             
-            // Add glow effect
-            const glowGeometry = new THREE.BoxGeometry(cubeSize * 1.3, cubeSize * 1.3, cubeSize * 1.3);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-                color: type === 'buy' ? 0x00ff00 : 0xff3366,
-                transparent: true,
-                opacity: 0.15,
-                side: THREE.BackSide
-            });
-            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-            cube.add(glow);
-            
-            // Create wireframe overlay
-            const wireframe = new THREE.LineSegments(
-                new THREE.EdgesGeometry(geometry),
-                new THREE.LineBasicMaterial({
-                    color: 0xffffff,
-                    transparent: true,
-                    opacity: 0.3
-                })
-            );
-            cube.add(wireframe);
-            
-            // Store cube data
+            // Store data
+            const id = 'cube_' + Date.now() + '_' + Math.random();
             cube.userData = {
-                wallet: walletAddress,
+                id: id,
                 size: size,
-                type: type,
                 velocity: {
-                    x: (Math.random() - 0.5) * 0.02,
-                    y: (Math.random() - 0.5) * 0.02,
-                    z: (Math.random() - 0.5) * 0.02
-                },
-                rotationSpeed: {
                     x: (Math.random() - 0.5) * 0.01,
-                    y: (Math.random() - 0.5) * 0.01
-                },
-                createdAt: Date.now(),
-                pulsePhase: Math.random() * Math.PI * 2
+                    y: (Math.random() - 0.5) * 0.01,
+                    z: (Math.random() - 0.5) * 0.01
+                }
             };
             
             scene.add(cube);
-            cubes.set(walletAddress, cube);
+            cubes.set(id, cube);
             
-            // Create particle burst
-            createParticleBurst(cube.position, type === 'buy' ? 0x00ff00 : 0xff3366);
+            // Create particles
+            createParticles(cube.position, 0x00ff00);
             
-            // Play sound
-            playTransactionSound(type, size);
+            // Update stats
+            stats.wallets++;
+            stats.buys++;
+            stats.volume += sizeMap[size] * 100;
+            updateStats();
             
             // Spawn animation
+            cube.scale.set(0, 0, 0);
             animateSpawn(cube, cubeSize);
             
-            // Change color after delay for buys
-            if (type === 'buy') {
-                setTimeout(() => {
-                    if (cubes.has(walletAddress)) {
-                        animateColorTransition(cube, 0x00ff00, 0x0088ff, 2000);
-                    }
-                }, 5000);
-            }
+            // Change color after 3 seconds
+            setTimeout(function() {
+                if (cubes.has(id)) {
+                    cube.material.color.setHex(0x0088ff);
+                    cube.material.emissive.setHex(0x0088ff);
+                }
+            }, 3000);
+        }
+
+        // Remove cube function
+        function removeCube() {
+            if (cubes.size === 0) return;
             
-            return cube;
-        }
-
-        function setPositionByMode(cube) {
-            switch(visualMode) {
-                case 'galaxy':
-                    const angle = Math.random() * Math.PI * 2;
-                    const radius = Math.random() * 30 + 10;
-                    const armOffset = (Math.random() - 0.5) * 5;
-                    cube.position.x = Math.cos(angle) * radius + armOffset;
-                    cube.position.y = (Math.random() - 0.5) * 10 + 5;
-                    cube.position.z = Math.sin(angle) * radius + armOffset;
-                    break;
-                    
-                case 'grid':
-                    const gridSize = Math.ceil(Math.sqrt(cubes.size + 1));
-                    const index = cubes.size;
-                    const gridX = (index % gridSize) - gridSize / 2;
-                    const gridZ = Math.floor(index / gridSize) - gridSize / 2;
-                    cube.position.x = gridX * 3;
-                    cube.position.y = Math.random() * 2 + 2;
-                    cube.position.z = gridZ * 3;
-                    break;
-                    
-                case 'sphere':
-                    const phi = Math.acos(2 * Math.random() - 1);
-                    const theta = Math.random() * Math.PI * 2;
-                    const r = 25;
-                    cube.position.x = r * Math.sin(phi) * Math.cos(theta);
-                    cube.position.y = r * Math.sin(phi) * Math.sin(theta) + 25;
-                    cube.position.z = r * Math.cos(phi);
-                    break;
-                    
-                default:
-                    cube.position.x = (Math.random() - 0.5) * 40;
-                    cube.position.y = Math.random() * 15 + 2;
-                    cube.position.z = (Math.random() - 0.5) * 40;
+            const keys = Array.from(cubes.keys());
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            const cube = cubes.get(randomKey);
+            
+            if (cube) {
+                // Change color to red
+                cube.material.color.setHex(0xff0066);
+                cube.material.emissive.setHex(0xff0066);
+                
+                // Create particles
+                createParticles(cube.position, 0xff0066);
+                
+                // Update stats
+                stats.wallets--;
+                stats.sells++;
+                updateStats();
+                
+                // Remove after animation
+                setTimeout(function() {
+                    scene.remove(cube);
+                    cubes.delete(randomKey);
+                }, 500);
             }
         }
 
-        function createParticleBurst(position, color) {
-            const particleCount = 50;
+        // Create particle effect
+        function createParticles(position, color) {
             const geometry = new THREE.BufferGeometry();
+            const particleCount = 30;
             const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
-            const sizes = new Float32Array(particleCount);
             const velocities = [];
             
-            const colorObj = new THREE.Color(color);
-            
-            for (let i = 0; i < particleCount; i++) {
-                const i3 = i * 3;
-                positions[i3] = position.x;
-                positions[i3 + 1] = position.y;
-                positions[i3 + 2] = position.z;
-                
-                colors[i3] = colorObj.r;
-                colors[i3 + 1] = colorObj.g;
-                colors[i3 + 2] = colorObj.b;
-                
-                sizes[i] = Math.random() * 0.5 + 0.1;
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = position.x;
+                positions[i + 1] = position.y;
+                positions[i + 2] = position.z;
                 
                 velocities.push({
-                    x: (Math.random() - 0.5) * 0.8,
-                    y: Math.random() * 0.8,
-                    z: (Math.random() - 0.5) * 0.8
+                    x: (Math.random() - 0.5) * 0.5,
+                    y: Math.random() * 0.5,
+                    z: (Math.random() - 0.5) * 0.5
                 });
             }
             
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
             
             const material = new THREE.PointsMaterial({
-                size: 0.5,
-                vertexColors: true,
+                color: color,
+                size: 0.3,
                 transparent: true,
-                opacity: 1,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
+                opacity: 1
             });
             
             const particleSystem = new THREE.Points(geometry, material);
@@ -1194,134 +529,38 @@
             });
         }
 
+        // Animate spawn
         function animateSpawn(cube, targetScale) {
-            cube.scale.set(0, 0, 0);
             const startTime = Date.now();
-            const duration = 800;
+            const duration = 500;
             
             function update() {
                 const elapsed = Date.now() - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
-                // Elastic easing
-                const eased = 1 - Math.pow(1 - progress, 3) * Math.cos(progress * Math.PI * 4);
-                cube.scale.set(
-                    eased * targetScale,
-                    eased * targetScale,
-                    eased * targetScale
-                );
-                
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                }
-            }
-            
-            update();
-        }
-
-        function animateColorTransition(cube, startColor, endColor, duration) {
-            const start = new THREE.Color(startColor);
-            const end = new THREE.Color(endColor);
-            const startTime = Date.now();
-            
-            function update() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                const r = start.r + (end.r - start.r) * progress;
-                const g = start.g + (end.g - start.g) * progress;
-                const b = start.b + (end.b - start.b) * progress;
-                
-                cube.material.color.setRGB(r, g, b);
-                cube.material.emissive.setRGB(r * 0.3, g * 0.3, b * 0.3);
-                
-                // Update glow
-                if (cube.children[0]) {
-                    cube.children[0].material.color.setRGB(r, g, b);
-                }
-                
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                }
-            }
-            
-            update();
-        }
-
-        function removeCube(walletAddress) {
-            const cube = cubes.get(walletAddress);
-            if (!cube) return;
-            
-            // Change to red
-            animateColorTransition(cube, cube.material.color.getHex(), 0xff3366, 300);
-            
-            // Create particle burst
-            createParticleBurst(cube.position, 0xff3366);
-            
-            // Animate removal
-            const startTime = Date.now();
-            const duration = 800;
-            const startScale = cube.scale.x;
-            
-            function update() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                const scale = startScale * (1 - progress);
+                const scale = progress * targetScale;
                 cube.scale.set(scale, scale, scale);
-                cube.rotation.x += 0.1;
-                cube.rotation.y += 0.1;
-                cube.material.opacity = 0.9 * (1 - progress);
                 
                 if (progress < 1) {
                     requestAnimationFrame(update);
-                } else {
-                    scene.remove(cube);
-                    cubes.delete(walletAddress);
-                    updateStats();
                 }
             }
             
             update();
         }
 
-        function playTransactionSound(type, size) {
-            if (!audioContext) return;
-            
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            const filter = audioContext.createBiquadFilter();
-            
-            oscillator.connect(filter);
-            filter.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            filter.type = 'lowpass';
-            filter.frequency.value = 2000;
-            
-            if (type === 'buy') {
-                // Ascending tone
-                oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(
-                    size === 'large' ? 800 : 400,
-                    audioContext.currentTime + 0.1
-                );
-            } else {
-                // Descending tone
-                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
-            }
-            
-            gainNode.gain.setValueAtTime(size === 'large' ? 0.2 : 0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
+        // Update stats display
+        function updateStats() {
+            document.getElementById('wallet-count').textContent = stats.wallets;
+            document.getElementById('volume').textContent = stats.volume;
+            document.getElementById('buys').textContent = stats.buys;
+            document.getElementById('sells').textContent = stats.sells;
         }
 
+        // Setup event listeners
         function setupEventListeners() {
             // Mouse controls
-            document.addEventListener('mousedown', (e) => {
+            document.addEventListener('mousedown', function(e) {
                 if (e.target.id === 'canvas') {
                     isMouseDown = true;
                     mouseX = e.clientX;
@@ -1329,36 +568,32 @@
                 }
             });
             
-            document.addEventListener('mouseup', () => {
+            document.addEventListener('mouseup', function() {
                 isMouseDown = false;
             });
             
-            document.addEventListener('mousemove', (e) => {
-                // Update mouse position for raycasting
-                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                
-                // Camera rotation
+            document.addEventListener('mousemove', function(e) {
                 if (isMouseDown) {
                     const deltaX = e.clientX - mouseX;
                     const deltaY = e.clientY - mouseY;
                     
                     cameraRotationY -= deltaX * 0.005;
                     cameraRotationX -= deltaY * 0.005;
+                    
+                    // Limit vertical rotation
                     cameraRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRotationX));
                     
                     mouseX = e.clientX;
                     mouseY = e.clientY;
                 }
                 
-                // Update tooltip position
-                const tooltip = document.getElementById('wallet-tooltip');
-                tooltip.style.left = e.clientX + 15 + 'px';
-                tooltip.style.top = e.clientY + 15 + 'px';
+                // Update mouse position for raycasting
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             });
             
             // Keyboard controls
-            document.addEventListener('keydown', (e) => {
+            document.addEventListener('keydown', function(e) {
                 switch(e.key.toLowerCase()) {
                     case 'w': moveForward = true; break;
                     case 's': moveBackward = true; break;
@@ -1369,7 +604,7 @@
                 }
             });
             
-            document.addEventListener('keyup', (e) => {
+            document.addEventListener('keyup', function(e) {
                 switch(e.key.toLowerCase()) {
                     case 'w': moveForward = false; break;
                     case 's': moveBackward = false; break;
@@ -1381,44 +616,42 @@
             });
             
             // Mouse wheel
-            document.addEventListener('wheel', (e) => {
+            document.addEventListener('wheel', function(e) {
                 if (e.target.id === 'canvas') {
-                    e.preventDefault();
                     const forward = new THREE.Vector3(0, 0, -1);
                     forward.applyQuaternion(camera.quaternion);
                     forward.y = 0;
                     forward.normalize();
-                    camera.position.addScaledVector(forward, -e.deltaY * 0.02);
+                    camera.position.addScaledVector(forward, -e.deltaY * 0.01);
                 }
             });
             
             // Window resize
-            window.addEventListener('resize', () => {
+            window.addEventListener('resize', function() {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
         }
 
+        // Reset camera view
+        function resetView() {
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            cameraRotationX = 0;
+            cameraRotationY = 0;
+        }
+
+        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
             
-            // Update FPS
-            frameCount++;
-            const currentTime = performance.now();
-            if (currentTime >= lastTime + 1000) {
-                fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
-                document.getElementById('fps').textContent = fps;
-                frameCount = 0;
-                lastTime = currentTime;
-            }
-            
-            // Update camera
+            // Update camera rotation
             camera.rotation.order = 'YXZ';
             camera.rotation.y = cameraRotationY;
             camera.rotation.x = cameraRotationX;
             
-            // Movement
+            // Handle movement
             const moveSpeed = 0.3;
             const forward = new THREE.Vector3(0, 0, -1);
             const right = new THREE.Vector3(1, 0, 0);
@@ -1437,38 +670,31 @@
             if (moveUp) camera.position.y += moveSpeed;
             if (moveDown) camera.position.y -= moveSpeed;
             
+            // Keep camera above ground
             camera.position.y = Math.max(0.5, camera.position.y);
             
             // Animate cubes
-            const time = Date.now() * 0.001;
-            cubes.forEach((cube) => {
-                // Rotation
-                cube.rotation.x += cube.userData.rotationSpeed.x;
-                cube.rotation.y += cube.userData.rotationSpeed.y;
+            cubes.forEach(function(cube) {
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
                 
                 // Floating motion
                 cube.position.x += cube.userData.velocity.x;
                 cube.position.y += cube.userData.velocity.y;
                 cube.position.z += cube.userData.velocity.z;
                 
-                // Pulse effect
-                const pulseScale = 1 + Math.sin(time * 2 + cube.userData.pulsePhase) * 0.05;
-                const baseScale = cube.userData.size === 'small' ? 0.5 : 
-                                 cube.userData.size === 'large' ? 2 : 1;
-                cube.scale.set(baseScale * pulseScale, baseScale * pulseScale, baseScale * pulseScale);
-                
-                // Boundary bounce
-                if (Math.abs(cube.position.x) > 30) cube.userData.velocity.x *= -1;
-                if (cube.position.y > 20 || cube.position.y < 1) {
+                // Bounce off boundaries
+                if (Math.abs(cube.position.x) > 25) cube.userData.velocity.x *= -1;
+                if (cube.position.y > 15 || cube.position.y < 0.5) {
                     cube.userData.velocity.y *= -1;
-                    if (cube.position.y < 1) cube.position.y = 1;
+                    if (cube.position.y < 0.5) cube.position.y = 0.5;
                 }
-                if (Math.abs(cube.position.z) > 30) cube.userData.velocity.z *= -1;
+                if (Math.abs(cube.position.z) > 25) cube.userData.velocity.z *= -1;
             });
             
             // Update particles
-            particles = particles.filter((particle) => {
-                particle.life -= 0.015;
+            particles = particles.filter(function(particle) {
+                particle.life -= 0.02;
                 
                 if (particle.life <= 0) {
                     scene.remove(particle.system);
@@ -1480,7 +706,7 @@
                     positions[i] += particle.velocities[i/3].x;
                     positions[i + 1] += particle.velocities[i/3].y;
                     positions[i + 2] += particle.velocities[i/3].z;
-                    particle.velocities[i/3].y -= 0.02;
+                    particle.velocities[i/3].y -= 0.01; // Gravity
                 }
                 
                 particle.system.geometry.attributes.position.needsUpdate = true;
@@ -1489,200 +715,11 @@
                 return true;
             });
             
-            // Raycasting for hover effects
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(Array.from(cubes.values()));
-            
-            // Reset all cubes
-            cubes.forEach(cube => {
-                cube.material.emissiveIntensity = 0.3;
-            });
-            
-            // Highlight hovered cube
-            if (intersects.length > 0) {
-                const hoveredCube = intersects[0].object;
-                hoveredCube.material.emissiveIntensity = 0.6;
-                showWalletTooltip(hoveredCube.userData);
-            } else {
-                hideWalletTooltip();
-            }
-            
-            // Update performance stats
-            document.getElementById('cube-count').textContent = cubes.size;
-            document.getElementById('particle-count').textContent = particles.length;
-            
             renderer.render(scene, camera);
         }
 
-        function showWalletTooltip(data) {
-            const tooltip = document.getElementById('wallet-tooltip');
-            document.getElementById('tooltip-address').textContent = 
-                data.wallet.substring(0, 6) + '...' + data.wallet.substring(data.wallet.length - 4);
-            document.getElementById('tooltip-balance').textContent = 
-                data.size === 'small' ? '< 100' : data.size === 'large' ? '> 10K' : '100-10K';
-            document.getElementById('tooltip-type').textContent = 
-                data.size === 'large' ? 'Whale' : data.size === 'small' ? 'Shrimp' : 'Holder';
-            tooltip.style.display = 'block';
-        }
-
-        function hideWalletTooltip() {
-            document.getElementById('wallet-tooltip').style.display = 'none';
-        }
-
-        // UI Functions
-        function updateStats() {
-            document.getElementById('total-holders').textContent = cubes.size;
-            
-            // Update volume bars
-            const total = stats.buyVolume + stats.sellVolume;
-            if (total > 0) {
-                const buyPercent = (stats.buyVolume / total) * 100;
-                const sellPercent = (stats.sellVolume / total) * 100;
-                
-                document.getElementById('buy-bar').style.width = buyPercent + '%';
-                document.getElementById('sell-bar').style.width = sellPercent + '%';
-                document.getElementById('buy-percent').textContent = buyPercent.toFixed(1) + '%';
-                document.getElementById('sell-percent').textContent = sellPercent.toFixed(1) + '%';
-            }
-            
-            // Update other stats
-            document.getElementById('tx-count').textContent = stats.transactions;
-            document.getElementById('market-cap').textContent = ' + (cubes.size * 1000).toLocaleString();
-            document.getElementById('volume-24h').textContent = ' + (total * 100).toLocaleString();
-        }
-
-        function addTransaction(type, wallet, size) {
-            const txList = document.getElementById('tx-list');
-            const txItem = document.createElement('div');
-            txItem.className = `transaction-item ${type}`;
-            txItem.innerHTML = `
-                <span class="tx-type ${type}">${type.toUpperCase()}</span>
-                <span class="tx-wallet">${wallet.substring(0, 6)}...${wallet.substring(wallet.length - 4)}</span>
-                <span class="tx-amount">${size.toUpperCase()}</span>
-            `;
-            
-            txList.insertBefore(txItem, txList.firstChild);
-            
-            // Keep only last 10 transactions
-            while (txList.children.length > 10) {
-                txList.removeChild(txList.lastChild);
-            }
-        }
-
-        // Simulation functions
-        function simulateBuy(size) {
-            const wallet = 'SOL' + Math.random().toString(36).substring(2, 10).toUpperCase();
-            createCube(wallet, size, 'buy');
-            
-            stats.buyVolume += size === 'small' ? 1 : size === 'large' ? 10 : 5;
-            stats.transactions++;
-            
-            addTransaction('buy', wallet, size);
-            updateStats();
-        }
-
-        function simulateSell(size) {
-            if (cubes.size === 0) return;
-            
-            const wallets = Array.from(cubes.keys());
-            const randomWallet = wallets[Math.floor(Math.random() * wallets.length)];
-            
-            removeCube(randomWallet);
-            
-            stats.sellVolume += size === 'small' ? 1 : size === 'large' ? 10 : 5;
-            stats.transactions++;
-            
-            addTransaction('sell', randomWallet, size);
-            updateStats();
-            
-            playTransactionSound('sell', size);
-        }
-
-        // Visual mode switching
-        function setVisualMode(mode) {
-            visualMode = mode;
-            
-            // Update button states
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.mode === mode) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            // Rearrange existing cubes
-            cubes.forEach(cube => {
-                setPositionByMode(cube);
-            });
-        }
-
-        // Camera reset
-        function resetCamera() {
-            camera.position.set(0, 2, 0);
-            cameraRotationX = 0;
-            cameraRotationY = 0;
-        }
-
-        // Solana connection
-        async function connectToSolana() {
-            try {
-                const address = document.getElementById('token-address').value;
-                const endpoint = document.getElementById('rpc-endpoint').value;
-                
-                if (!address) {
-                    alert('Please enter a token address');
-                    return;
-                }
-                
-                // Initialize connection
-                connection = new solanaWeb3.Connection(endpoint, 'confirmed');
-                tokenAddress = address;
-                
-                // Update UI
-                document.getElementById('status-dot').classList.add('connected');
-                document.getElementById('status-text').textContent = 'ONLINE';
-                
-                // Start monitoring
-                startMonitoring();
-                
-            } catch (error) {
-                console.error('Connection failed:', error);
-                alert('Failed to connect: ' + error.message);
-            }
-        }
-
-        async function startMonitoring() {
-            if (!connection || !tokenAddress) return;
-            
-            try {
-                const tokenPubkey = new solanaWeb3.PublicKey(tokenAddress);
-                
-                // Subscribe to account changes
-                subscriptionId = connection.onAccountChange(
-                    tokenPubkey,
-                    (accountInfo) => {
-                        console.log('Account changed:', accountInfo);
-                        // Process real transactions here
-                    },
-                    'confirmed'
-                );
-                
-                // For demo purposes, simulate some activity
-                setInterval(() => {
-                    if (Math.random() > 0.5) {
-                        simulateBuy(Math.random() > 0.7 ? 'large' : Math.random() > 0.5 ? 'medium' : 'small');
-                    } else if (cubes.size > 3) {
-                        simulateSell(Math.random() > 0.7 ? 'large' : 'small');
-                    }
-                }, 3000);
-                
-            } catch (error) {
-                console.error('Monitoring error:', error);
-            }
-        }
-
-        // Initialize on load
-        window.addEventListener('load', init);
+        // Start when page loads
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
