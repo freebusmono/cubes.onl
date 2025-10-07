@@ -1,0 +1,32 @@
+{
+  "name": "cubes.onl",
+  "version": "1.0.0",
+  "description": "Real-time 3D visualization for Solana token holders",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000",
+    "dev": "npx live-server",
+    "test": "echo \"No tests configured\"",
+    "deploy": "vercel --prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_USERNAME/cubes.onl.git"
+  },
+  "keywords": [
+    "solana",
+    "web3",
+    "visualization",
+    "threejs",
+    "3d",
+    "blockchain",
+    "defi",
+    "crypto"
+  ],
+  "author": "YOUR_NAME",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/cubes.onl/issues"
+  },
+  "homepage": "https://cubes.onl"
+}
