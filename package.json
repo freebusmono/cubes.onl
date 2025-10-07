@@ -9,8 +9,9 @@
     "test": "echo \"No tests configured\"",
     "deploy": "vercel --prod"
   },
-  "dependencies": {
-    "@vercel/kv": "^1.0.0"
+ "dependencies": {
+  "@neondatabase/serverless": "^0.6.0"
+}
   },
   "repository": {
     "type": "git",
