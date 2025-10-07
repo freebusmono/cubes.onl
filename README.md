@@ -1,49 +1,28 @@
-<div align="center">
-  <h1>🔮 CUBES.ONL</h1>
-  <p><strong>Real-Time 3D Visualization for Solana Tokens</strong></p>
-  <p>Watch your token ecosystem come alive in stunning 3D</p>
-  
-  <p>
-    <a href="https://cubes.onl">
-      <img src="https://img.shields.io/badge/🌐_Live_Demo-cubes.onl-00ff00?style=for-the-badge" alt="Live Demo">
-    </a>
-  </p>
+# 🔮 CUBES.ONL
 
-  <p>
-    <img src="https://img.shields.io/badge/Solana-Web3-9945FF?style=flat-square&logo=solana" alt="Solana">
-    <img src="https://img.shields.io/badge/Three.js-3D-000000?style=flat-square&logo=three.js" alt="Three.js">
-    <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License">
-    <img src="https://img.shields.io/badge/Status-Live-success?style=flat-square" alt="Status">
-  </p>
-</div>
+Live 3D visualization of Solana token holders. Each cube represents a wallet.
 
----
+🌐 **Live Demo:** [cubes.onl](https://cubes.onl)
 
-## ✨ Features
+## Features
+- Real-time 3D visualization
+- Global sync across all users
+- Particle effects and animations
+- Persistent data with Neon database
 
-- 🎮 **Real-Time 3D Visualization** - Each wallet appears as a floating cube in 3D space
-- 🌈 **Dynamic Effects** - Particle systems, sound effects, and smooth animations
-- 📊 **Live Analytics** - Track holders, volume, and transactions in real-time
-- 🎨 **Multiple Visual Modes** - Galaxy, Grid, Sphere, and Default layouts
-- 🔊 **Audio Feedback** - Unique sounds for buy/sell transactions
-- 📱 **Responsive Design** - Works on desktop and mobile devices
-- ⚡ **High Performance** - Optimized for smooth 60 FPS rendering
-- 🌐 **Blockchain Connected** - Direct integration with Solana RPC
+## Quick Start
+1. Visit [cubes.onl](https://cubes.onl)
+2. Click buttons to add/remove cubes
+3. Everyone sees the same cubes in real-time!
 
-## 🚀 Quick Start
+## Tech Stack
+- Three.js for 3D graphics
+- Neon Postgres database
+- Vercel hosting
+- Solana Web3.js (coming soon)
 
-### View Live Demo
-Visit [https://cubes.onl](https://cubes.onl) to see the visualizer in action.
-
-### Run Locally
+## Development
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/cubes.onl.git
+git clone https://github.com/freebusmono/cubes.onl
 cd cubes.onl
-
-# Open in browser (no build required!)
-open index.html
-
-# Or serve with Python
-python3 -m http.server 8000
-# Visit http://localhost:8000
+# Open index.html in browser
