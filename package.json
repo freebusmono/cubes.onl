@@ -9,6 +9,9 @@
     "test": "echo \"No tests configured\"",
     "deploy": "vercel --prod"
   },
+  "dependencies": {
+    "@vercel/kv": "^1.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/YOUR_USERNAME/cubes.onl.git"
