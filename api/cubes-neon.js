@@ -1,12 +1,35 @@
 import { neon } from '@neondatabase/serverless';
 
+// List of allowed origins (websites that can access this API)
+const ALLOWED_ORIGINS = [
+  'https://cubes.onl',
+  'https://www.cubes.onl',
+  'http://localhost:8000',
+  'http://localhost:3000'
+];
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Get the origin of the request
+  const origin = req.headers.origin;
+  
+  // Only set CORS header if origin is in our allowed list
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+  
+  // If origin is not allowed, reject the request
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ 
+      error: 'Access forbidden: Origin not allowed' 
+    });
   }
   
   try {
