@@ -3,8 +3,12 @@ const Scene = {
     camera: null,
     renderer: null,
     lights: [],
+    raycaster: null,
+    mouse: new THREE.Vector2(),
     
     init() {
+        // Create raycaster for click detection
+        this.raycaster = new THREE.Raycaster();
         // Create scene
         this.scene = new THREE.Scene();
         this.scene.fog = new THREE.Fog(0x000000, 1, 200);
@@ -38,6 +42,72 @@ const Scene = {
         
         // Handle resize
         window.addEventListener('resize', () => this.onResize());
+        
+        // Handle cube clicks
+        window.addEventListener('click', (e) => this.onCanvasClick(e));
+        
+        // Handle cube hover
+        window.addEventListener('mousemove', (e) => this.onCanvasHover(e));
+    },
+    
+    onCanvasClick(event) {
+        // Calculate mouse position in normalized device coordinates (-1 to +1)
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        
+        // Update raycaster with camera and mouse position
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        
+        // Get all cubes (meshes) from the scene
+        const cubes = [];
+        CubeManager.cubes.forEach(cube => cubes.push(cube));
+        
+        // Find intersections
+        const intersects = this.raycaster.intersectObjects(cubes);
+        
+        if (intersects.length > 0) {
+            // Clicked on a cube! Get the closest one
+            const clickedCube = intersects[0].object;
+            
+            // Show details panel
+            UI.showCubeDetails(clickedCube.userData);
+        }
+    },
+    
+    onCanvasHover(event) {
+        // Calculate mouse position
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        
+        // Update raycaster
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        
+        // Get all cubes
+        const cubes = [];
+        CubeManager.cubes.forEach(cube => cubes.push(cube));
+        
+        // Find intersections
+        const intersects = this.raycaster.intersectObjects(cubes);
+        
+        // Reset all cubes to normal first
+        CubeManager.cubes.forEach(cube => {
+            if (!cube.userData.isHovered) {
+                cube.material.emissiveIntensity = 0.1;
+            }
+        });
+        
+        // Highlight hovered cube
+        if (intersects.length > 0) {
+            const hoveredCube = intersects[0].object;
+            hoveredCube.material.emissiveIntensity = 0.3;
+            hoveredCube.userData.isHovered = true;
+            document.body.style.cursor = 'pointer';
+        } else {
+            CubeManager.cubes.forEach(cube => {
+                cube.userData.isHovered = false;
+            });
+            document.body.style.cursor = 'default';
+        }
     },
     
     setupLights() {
